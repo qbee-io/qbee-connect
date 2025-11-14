@@ -31,7 +31,7 @@ jobs:
           - os: macos-13
             arch: amd64
             target: darwin
-          - os: macos-13-arm64
+          - os: macos-14-arm64
             arch: arm64
             target: darwin
 
@@ -62,7 +62,7 @@ jobs:
       
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.25
+          go-version: stable
 
       - name: install go dependencies
         shell: bash
