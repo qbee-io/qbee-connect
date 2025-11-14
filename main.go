@@ -19,6 +19,15 @@ import (
 	"go.qbee.io/client"
 )
 
+/*
+CI inspiration:
+
+https://github.com/smaTc/RemotePlayDetached
+
+https://github.com/massalabs/station/blob/main/Taskfile.yml
+
+*/
+
 // page state
 type deviceModel struct {
 	allDevices   []client.InventoryListItem
