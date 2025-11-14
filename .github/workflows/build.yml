@@ -25,7 +25,7 @@ jobs:
             target: windows
             cc: x86_64-w64-mingw32-gcc
             ext: .exe
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             arch: amd64
             target: linux
           - os: macos-14
