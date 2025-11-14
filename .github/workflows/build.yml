@@ -28,12 +28,12 @@ jobs:
           - os: ubuntu-latest
             arch: amd64
             target: linux
-          # - os: macos-13
-          #   arch: amd64
-          #   target: darwin
-          # - os: macos-13
-          #   arch: arm64
-          #   target: darwin
+          - os: macos-13
+            arch: amd64
+            target: darwin
+          - os: macos-13
+            arch: arm64
+            target: darwin
 
     runs-on: ${{ matrix.os }}
     steps:
