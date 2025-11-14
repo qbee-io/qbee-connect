@@ -1,6 +1,7 @@
 name: build and upload artifacts
 
-
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
@@ -24,7 +25,7 @@ jobs:
             target: windows
             cc: x86_64-w64-mingw32-gcc
             ext: .exe
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             arch: amd64
             target: linux
           # - os: macos-13
