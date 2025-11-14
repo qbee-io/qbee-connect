@@ -60,9 +60,20 @@ jobs:
           sudo apt update
           sudo apt install -y libgl1-mesa-dev xorg-dev gcc-mingw-w64-x86-64 p7zip
       
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: stable
+          cache: false # We are using custom caching below
+
+      - name: Setup Golang caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ matrix.target }}-${{ matrix.arch }}-golang-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ matrix.target }}-${{ matrix.arch }}-golang-
 
       - name: install go dependencies
         shell: bash
