@@ -64,7 +64,7 @@ jobs:
       - name: install go dependencies
         shell: bash
         run: |
-          go install github.com/fyne-io/fyne/v2/cmd/fyne@latest
+          go install fyne.io/tools/cmd/fyne@latest
 
       - name: Set environment variables
         run: |
