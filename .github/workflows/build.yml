@@ -88,8 +88,7 @@ jobs:
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
-          GOOS=${{ matrix.target }} GOARCH=${{ matrix.arch }} go build -tags gles -ldflags="-w -s"  -o qbee-connect${{ matrix.ext }}
-
+          fyne build --release --target=${{ matrix.target }}/${{ matrix.arch }} -o qbee-connect${{ matrix.ext }} 
       # - name: Package binary for ${{ matrix.target }} on ${{ matrix.arch}}
       #   # We don't need to package for windows since Fyne package generates a similar .exe as go build.
       #   if: matrix.target != 'windows'

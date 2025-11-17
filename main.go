@@ -11,7 +11,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -125,12 +127,34 @@ func loadDevices(ctx context.Context, offset, itemsPerPage int) (*client.Invento
 	return devices, nil
 }
 
+func makeMenu(app fyne.App, w fyne.Window) *fyne.MainMenu {
+
+	openSettings := func() {
+		w := app.NewWindow("Fyne Settings")
+		w.SetContent(settings.NewSettings().LoadAppearanceScreen(w))
+		w.Resize(fyne.NewSize(440, 520))
+		w.Show()
+	}
+	showAbout := func() {
+		w := app.NewWindow("About")
+		w.SetContent(widget.NewLabel("About Fyne Demo app..."))
+		w.Show()
+	}
+	aboutItem := fyne.NewMenuItem("About", showAbout)
+	settingsItem := fyne.NewMenuItem("Settings", openSettings)
+	mainMenu := fyne.NewMenu("File", aboutItem, settingsItem)
+	return fyne.NewMainMenu(mainMenu)
+}
+
 func main() {
 	a := app.New()
 	w := a.NewWindow("qbee-connect - qbee.io")
 
 	model := newDeviceModel()
 
+	makeTray(a)
+
+	w.SetMainMenu(makeMenu(a, w))
 	// ---- Top toolbar (search + buttons) ----
 	searchEntry := widget.NewEntry()
 	searchEntry.SetPlaceHolder("Search devices")
@@ -264,6 +288,13 @@ func headerLabel(text string) *widget.Label {
 	lbl := widget.NewLabel(text)
 	lbl.TextStyle = fyne.TextStyle{Bold: true}
 	return lbl
+}
+
+func makeTray(a fyne.App) {
+	if desk, ok := a.(desktop.App); ok {
+		menu := fyne.NewMenu("qbee-connect")
+		desk.SetSystemTrayMenu(menu)
+	}
 }
 
 // buildDeviceRow builds a single row similar to the qbee web UI.
