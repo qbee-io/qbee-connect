@@ -5,20 +5,22 @@ import (
 	"fmt"
 	"image/color"
 	"log"
-	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"go.qbee.io/client"
+
+	_ "embed"
 )
 
 /*
@@ -32,129 +34,67 @@ https://github.com/massalabs/station/blob/main/Taskfile.yml
 
 // page state
 type deviceModel struct {
-	allDevices   []client.InventoryListItem
-	filtered     []client.InventoryListItem
+	deviceData   *client.InventoryListResponse
 	pageSize     int
 	currentPage  int
+	offset       int
 	searchFilter string
 }
 
 type deviceConnections struct {
+	// Configured remote access targets for this device
+	targets []client.RemoteAccessTarget
+
+	// Context cancellation function to stop the connection
+	cancel func()
 }
 
-func newDeviceModel() *deviceModel {
-	return &deviceModel{
-		allDevices: []client.InventoryListItem{},
-		filtered:   []client.InventoryListItem{},
-		pageSize:   10,
+//go:embed qbee-connect-icon.png
+var trayIcon []byte
 
-		currentPage: 0,
-	}
+type App struct {
+	fyneApp        fyne.App
+	mainWin        fyne.Window
+	cli            *client.Client
+	ctx            context.Context
+	connectionsMap *connectionsMap
+	deviceModel    *deviceModel
+	deviceList     *fyne.Container
 }
 
-func (m *deviceModel) applyFilter() {
-	if m.searchFilter == "" {
-		m.filtered = append([]client.InventoryListItem(nil), m.allDevices...)
-	} else {
-		filter := strings.ToLower(m.searchFilter)
-		m.filtered = m.filtered[:0]
-		for _, d := range m.allDevices {
-			if strings.Contains(strings.ToLower(d.Title), filter) {
-				m.filtered = append(m.filtered, d)
-			}
-		}
-	}
+func newApp() *App {
+	a := app.NewWithID("io.qbee.qbee-connect")
+	w := a.NewWindow("qbee-connect - qbee.io")
+	ctx := context.Background()
 
-	// sort by name like in the UI screenshot
-	sort.Slice(m.filtered, func(i, j int) bool {
-		return strings.ToLower(m.filtered[i].Title) < strings.ToLower(m.filtered[j].Title)
-	})
-
-	m.currentPage = 0
-}
-
-func (m *deviceModel) totalPages() int {
-	if len(m.filtered) == 0 {
-		return 1
-	}
-	pages := len(m.filtered) / m.pageSize
-	if len(m.filtered)%m.pageSize != 0 {
-		pages++
-	}
-	return pages
-}
-
-func (m *deviceModel) pageDevices() []client.InventoryListItem {
-	if len(m.filtered) == 0 {
-		return nil
-	}
-	start := m.currentPage * m.pageSize
-	if start >= len(m.filtered) {
-		start = 0
-	}
-	end := start + m.pageSize
-	if end > len(m.filtered) {
-		end = len(m.filtered)
-	}
-	return m.filtered[start:end]
-}
-
-// loadDevices calls qbee-cli and unmarshals the JSON.
-// Adjust the command and JSON schema to match your environment.
-func loadDevices(ctx context.Context, offset, itemsPerPage int) (*client.InventoryListResponse, error) {
-	// Example: qbee-cli devices list --json
 	cli, err := client.LoginGetAuthenticatedClient(ctx)
-
 	if err != nil {
-		return nil, fmt.Errorf("failed to create qbee client: %w", err)
+		log.Fatalln("failed to authenticate client:", err)
 	}
 
-	query := client.InventoryListQuery{
-		Search: client.InventoryListSearch{
-			Title: "",
-		},
-		SortField:     "title",
-		SortDirection: client.SortDirectionAsc,
-		ReportType:    "short",
-		Offset:        offset,
-		ItemsPerPage:  itemsPerPage,
-	}
+	connectionsMap := newConnectionsMap()
 
-	devices, err := cli.ListDeviceInventory(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching device list: %w", err)
+	return &App{
+		fyneApp:        a,
+		mainWin:        w,
+		cli:            cli,
+		ctx:            ctx,
+		connectionsMap: connectionsMap,
+		deviceModel:    newDeviceModel(),
+		deviceList:     container.NewVBox(),
 	}
-	return devices, nil
-}
-
-func makeMenu(app fyne.App, w fyne.Window) *fyne.MainMenu {
-
-	openSettings := func() {
-		w := app.NewWindow("Fyne Settings")
-		w.SetContent(settings.NewSettings().LoadAppearanceScreen(w))
-		w.Resize(fyne.NewSize(440, 520))
-		w.Show()
-	}
-	showAbout := func() {
-		w := app.NewWindow("About")
-		w.SetContent(widget.NewLabel("About Fyne Demo app..."))
-		w.Show()
-	}
-	aboutItem := fyne.NewMenuItem("About", showAbout)
-	settingsItem := fyne.NewMenuItem("Settings", openSettings)
-	mainMenu := fyne.NewMenu("File", aboutItem, settingsItem)
-	return fyne.NewMainMenu(mainMenu)
 }
 
 func main() {
-	a := app.New()
-	w := a.NewWindow("qbee-connect - qbee.io")
 
-	model := newDeviceModel()
+	app := newApp()
+	w := app.mainWin
 
-	makeTray(a)
+	app.makeTray()
+	app.mainWin.SetMainMenu(app.makeMenu())
 
-	w.SetMainMenu(makeMenu(a, w))
+	w.SetIcon(fyne.NewStaticResource("qbee-connect-icon.png", trayIcon))
+
 	// ---- Top toolbar (search + buttons) ----
 	searchEntry := widget.NewEntry()
 	searchEntry.SetPlaceHolder("Search devices")
@@ -181,22 +121,23 @@ func main() {
 		headerLabel("Actions"),
 	)
 
-	// ---- Device list container (will be replaced on pagination / refresh) ----
-	deviceListContainer := container.NewVBox()
-
 	// ---- Pagination controls ----
 	pageInfoLabel := widget.NewLabel("Page 1 / 1")
 
 	prevButton := widget.NewButtonWithIcon("", theme.NavigateBackIcon(), func() {
-		if model.currentPage > 0 {
-			model.currentPage--
-			refreshDeviceListUI(w, model, deviceListContainer, pageInfoLabel)
+		if app.deviceModel.currentPage > 0 {
+			app.deviceModel.currentPage--
+			app.refreshDeviceListUI()
+
 		}
 	})
 	nextButton := widget.NewButtonWithIcon("", theme.NavigateNextIcon(), func() {
-		if model.currentPage < model.totalPages()-1 {
-			model.currentPage++
-			refreshDeviceListUI(w, model, deviceListContainer, pageInfoLabel)
+		if app.deviceModel.currentPage < app.deviceModel.totalPages()-1 {
+			app.deviceModel.currentPage++
+			app.refreshDeviceListUI()
+			pageInfoLabel.SetText(
+				fmt.Sprintf("Page %d / %d", app.deviceModel.currentPage+1, app.deviceModel.totalPages()),
+			)
 		}
 	})
 
@@ -213,74 +154,95 @@ func main() {
 		pagination,
 		nil,
 		nil,
-		deviceListContainer,
+		app.deviceList,
 	)
 
 	root := container.NewBorder(topBar, nil, nil, nil, content)
 	w.SetContent(root)
 
-	// ---- Handlers ----
-	ctx := context.Background()
-	refresh := func() {
-		devices, err := loadDevices(ctx, 0, 100)
-		if err != nil {
-			log.Println("failed to load devices:", err)
-			dialog := widget.NewPopUp(
-				widget.NewLabel("Failed to load devices. Please try again."),
-				w.Canvas(),
-			)
-			dialog.Show()
-			return
-		}
+	deviceFetchError := widget.NewPopUp(
+		widget.NewLabel("Failed to load devices. Please try again."),
+		w.Canvas(),
+	)
+	deviceFetchError.Hide()
 
-		model.allDevices = devices.Items
-		model.applyFilter()
-		refreshDeviceListUI(w, model, deviceListContainer, pageInfoLabel)
+	// ---- Handlers ----
+	refresh := func() {
+		err := app.refreshDeviceListUI()
+		if err != nil {
+			deviceFetchError.Show()
+			log.Println("refresh error:", err)
+		} else {
+			deviceFetchError.Hide()
+		}
+		pageInfoLabel.SetText(
+			fmt.Sprintf("Page %d / %d", app.deviceModel.currentPage+1, app.deviceModel.totalPages()),
+		)
 	}
 
 	refreshButton.OnTapped = refresh
 
 	searchEntry.OnChanged = func(s string) {
-		model.searchFilter = s
-		model.applyFilter()
-		refreshDeviceListUI(w, model, deviceListContainer, pageInfoLabel)
+		app.deviceModel.searchFilter = s
+		app.deviceModel.currentPage = 0
+		err := app.refreshDeviceListUI()
+		if err != nil {
+			deviceFetchError.Show()
+			log.Println("refresh error:", err)
+		} else {
+			deviceFetchError.Hide()
+		}
+		pageInfoLabel.SetText(
+			fmt.Sprintf("Page %d / %d", app.deviceModel.currentPage+1, app.deviceModel.totalPages()),
+		)
+
 	}
 
-	// run in goroutine to avoid locking UI
-	devices, err := loadDevices(ctx, 0, 100)
+	err := app.refreshDeviceListUI()
 	if err != nil {
-		log.Println("initial load error:", err)
-		return
+		deviceFetchError.Show()
+		log.Println("refresh error:", err)
+	} else {
+		deviceFetchError.Hide()
 	}
-	model.allDevices = devices.Items
-	model.applyFilter()
-	refreshDeviceListUI(w, model, deviceListContainer, pageInfoLabel)
+
+	pageInfoLabel.SetText(
+		fmt.Sprintf("Page %d / %d", app.deviceModel.currentPage+1, app.deviceModel.totalPages()),
+	)
+
+	w.SetCloseIntercept(func() {
+		w.Hide()
+	})
 
 	// ---- Show window ----
 	w.ShowAndRun()
 }
 
 // refreshDeviceListUI rebuilds the list for the current page.
-func refreshDeviceListUI(w fyne.Window, model *deviceModel, list *fyne.Container, pageInfo *widget.Label) {
-	list.Objects = list.Objects[:0]
+func (app *App) refreshDeviceListUI() error {
+	var err error
 
-	devs := model.pageDevices()
-	if len(devs) == 0 {
-		list.Add(widget.NewLabel("No devices found"))
-		list.Refresh()
-		pageInfo.SetText("Page 1 / 1")
-		return
+	app.deviceModel.offset = app.deviceModel.currentPage * app.deviceModel.pageSize
+	app.deviceModel.deviceData, err = app.loadDevices(app.ctx, app.deviceModel.searchFilter, app.deviceModel.offset, app.deviceModel.pageSize)
+	if err != nil {
+		log.Println("failed to load devices for UI refresh:", err)
+		return err
 	}
 
-	for _, d := range devs {
-		row := buildDeviceRow(w, d)
-		list.Add(row)
+	app.redrawDeviceList()
+
+	return nil
+}
+
+func (app *App) redrawDeviceList() {
+	app.deviceList.Objects = app.deviceList.Objects[:0]
+
+	for _, d := range app.deviceModel.deviceData.Items {
+		row := app.buildDeviceRow(d)
+		app.deviceList.Add(row)
 	}
 
-	list.Refresh()
-	pageInfo.SetText(
-		fmt.Sprintf("Page %d / %d", model.currentPage+1, model.totalPages()),
-	)
+	app.deviceList.Refresh()
 }
 
 // headerLabel is a bold header cell for the grid header row.
@@ -290,22 +252,30 @@ func headerLabel(text string) *widget.Label {
 	return lbl
 }
 
-func makeTray(a fyne.App) {
-	if desk, ok := a.(desktop.App); ok {
-		menu := fyne.NewMenu("qbee-connect")
+func (app *App) makeTray() {
+	if desk, ok := app.fyneApp.(desktop.App); ok {
+		menu := fyne.NewMenu("qbee-connect",
+			fyne.NewMenuItem("Show", func() {
+				app.mainWin.Show()
+			}),
+			fyne.NewMenuItem("Quit", func() {
+				app.fyneApp.Quit()
+			}),
+		)
+		desk.SetSystemTrayIcon(fyne.NewStaticResource("qbee-connect-icon.png", trayIcon))
 		desk.SetSystemTrayMenu(menu)
 	}
 }
 
 // buildDeviceRow builds a single row similar to the qbee web UI.
-func buildDeviceRow(w fyne.Window, d client.InventoryListItem) fyne.CanvasObject {
+func (app *App) buildDeviceRow(d client.InventoryListItem) fyne.CanvasObject {
 	// Device name (left aligned)
 	deviceLabel := widget.NewLabel(d.Title)
 
 	// Status: colored circle + text
 	statusCircle := canvas.NewCircle(statusColor(d.Status))
 	statusCircle.Resize(fyne.NewSize(10, 10))
-	statusText := widget.NewLabel(strings.Title(d.Status))
+	statusText := widget.NewLabel(cases.Title(language.English).String(d.Status))
 	statusBox := container.NewHBox(
 		statusCircle,
 		widget.NewLabel(" "),
@@ -319,168 +289,23 @@ func buildDeviceRow(w fyne.Window, d client.InventoryListItem) fyne.CanvasObject
 
 	// Tags (comma joined)
 	tagsLabel := widget.NewLabel(strings.Join(d.Tags, ", "))
-
-	// Actions (placeholder "⋮")
-	actionsBtn := widget.NewButton("Connect", func() {
-		// Create form fields
-		localPortEntry := widget.NewEntry()
-		localPortEntry.SetPlaceHolder("Local port")
-
-		localAddrEntry := widget.NewEntry()
-		localAddrEntry.SetPlaceHolder("Local address")
-		localAddrEntry.SetText("127.0.0.1")
-
-		remotePortEntry := widget.NewEntry()
-		remotePortEntry.SetPlaceHolder("Remote port")
-
-		remoteAddrEntry := widget.NewEntry()
-		remoteAddrEntry.SetPlaceHolder("Remote address")
-		remoteAddrEntry.SetText("127.0.0.1")
-
-		protocolSelect := widget.NewSelect([]string{"tcp", "udp"}, func(value string) {})
-		protocolSelect.SetSelected("tcp")
-
-		// Container for multiple targets
-		targetsContainer := container.NewVBox()
-
-		// Function to create a target row
-		createTargetRow := func() *fyne.Container {
-			localPort := widget.NewEntry()
-			localPort.SetPlaceHolder("Local port")
-			localAddr := widget.NewEntry()
-			localAddr.SetPlaceHolder("Local address")
-			localAddr.SetText("127.0.0.1")
-			remotePort := widget.NewEntry()
-			remotePort.SetPlaceHolder("Remote port")
-			remoteAddr := widget.NewEntry()
-			remoteAddr.SetPlaceHolder("Remote address")
-			remoteAddr.SetText("127.0.0.1")
-			protocol := widget.NewSelect([]string{"tcp", "udp"}, func(value string) {})
-			protocol.SetSelected("tcp")
-
-			removeBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
-
-			row := container.NewGridWithColumns(6,
-				localPort, localAddr, remotePort, remoteAddr, protocol, removeBtn,
-			)
-
-			// Set remove button action after row is created
-			removeBtn.OnTapped = func() {
-				for i, obj := range targetsContainer.Objects {
-					if obj == row {
-						targetsContainer.Objects = append(targetsContainer.Objects[:i], targetsContainer.Objects[i+1:]...)
-						targetsContainer.Refresh()
-						break
-					}
-				}
-			}
-
-			return row
-		}
-
-		// Add initial target row
-		targetsContainer.Add(createTargetRow())
-
-		// Add plus button to add more targets
-		addBtn := widget.NewButtonWithIcon("Add Target", theme.ContentAddIcon(), func() {
-			targetsContainer.Add(createTargetRow())
+	tagsLabel.Truncation = fyne.TextTruncateEllipsis
+	tagsLabel.Alignment = fyne.TextAlignLeading
+	var actionsBtn fyne.CanvasObject
+	if _, ok := app.connectionsMap.get(d.NodeID); !ok {
+		actionsBtn = widget.NewButton("Connect", func() {
+			dialog := app.newConnectDialog(&d)
+			dialog.Show()
 		})
-
-		// Headers
-		headers := container.NewGridWithColumns(6,
-			widget.NewLabel("Local Port"),
-			widget.NewLabel("Local Address"),
-			widget.NewLabel("Remote Port"),
-			widget.NewLabel("Remote Address"),
-			widget.NewLabel("Protocol"),
-			widget.NewLabel(""),
-		)
-
-		// Form content
-		formContent := container.NewVBox(
-			widget.NewLabel("Configure port forwarding for "+d.Title),
-			widget.NewSeparator(),
-			headers,
-			container.NewScroll(targetsContainer),
-			addBtn,
-		)
-
-		controls := container.NewHBox(
-			layout.NewSpacer(),
-		)
-
-		dialog := widget.NewModalPopUp(
-			container.NewBorder(
-				formContent,
-				controls,
-				nil,
-				nil,
-				widget.NewCard("", "", container.NewWithoutLayout()),
-			),
-			w.Canvas(),
-		)
-
-		dialog.Resize(fyne.NewSize(800, 500))
-
-		// Dialog buttons
-		connectBtn := widget.NewButton("Connect", func() {
-
-			// extract target configurations
-			var targets []string
-			for _, obj := range targetsContainer.Objects {
-				if row, ok := obj.(*fyne.Container); ok {
-					localPort := row.Objects[0].(*widget.Entry).Text
-					localAddr := row.Objects[1].(*widget.Entry).Text
-					remotePort := row.Objects[2].(*widget.Entry).Text
-					remoteAddr := row.Objects[3].(*widget.Entry).Text
-					protocol := row.Objects[4].(*widget.Select).Selected
-
-					target := fmt.Sprintf("%s:%s:%s:%s", localAddr, localPort, remoteAddr, remotePort)
-
-					if protocol == "udp" {
-						target += "/udp"
-					}
-					targets = append(targets, target)
-				}
+	} else {
+		actionsBtn = widget.NewButton("Disconnect", func() {
+			if conn, ok := app.connectionsMap.get(d.NodeID); ok {
+				conn.cancel()
+				app.connectionsMap.delete(d.NodeID)
+				app.redrawDeviceList()
 			}
-
-			// Here you would initiate the port forwarding using the collected targets
-			log.Println("Starting port forwarding for device:", d.NodeID)
-
-			for _, t := range targets {
-
-				log.Println("Target:", t)
-			}
-			ctx := context.Background()
-			cli, err := client.LoginGetAuthenticatedClient(ctx)
-
-			if err != nil {
-				return
-			}
-
-			go func() {
-				err := cli.ParseConnectRetry(ctx, d.NodeID, targets, 1)
-
-				if err != nil {
-					log.Println("Port forwarding error:", err)
-				}
-			}()
-
-			// Close the dialog after starting port forwarding
-			dialog.Hide()
 		})
-
-		controls.Add(connectBtn)
-
-		cancelBtn := widget.NewButton("Cancel", func() {})
-		controls.Add(cancelBtn)
-
-		cancelBtn.OnTapped = func() {
-			dialog.Hide()
-		}
-
-		dialog.Show()
-	})
+	}
 
 	rowGrid := container.NewGridWithColumns(5,
 		deviceLabel,
