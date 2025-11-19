@@ -12,6 +12,8 @@ func newDeviceModel() *deviceModel {
 		deviceData:  &client.InventoryListResponse{},
 		pageSize:    10,
 		currentPage: 0,
+		offset:      0,
+		search:      &client.InventoryListSearch{},
 	}
 }
 
@@ -29,12 +31,10 @@ func (m *deviceModel) totalPages() int {
 
 // loadDevices calls qbee-cli and unmarshals the JSON.
 // Adjust the command and JSON schema to match your environment.
-func (app *App) loadDevices(ctx context.Context, search string, offset, itemsPerPage int) (*client.InventoryListResponse, error) {
+func (app *App) loadDevices(ctx context.Context, search *client.InventoryListSearch, offset, itemsPerPage int) (*client.InventoryListResponse, error) {
 
 	query := client.InventoryListQuery{
-		Search: client.InventoryListSearch{
-			Title: search,
-		},
+		Search:        *search,
 		SortField:     "title",
 		SortDirection: client.SortDirectionAsc,
 		ReportType:    "short",

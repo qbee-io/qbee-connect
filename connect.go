@@ -139,8 +139,6 @@ func (app *App) newConnectDialog(device *client.InventoryListItem) *widget.PopUp
 					Title:   "Connection Error",
 					Content: fmt.Sprintf("Failed to connect to device %s: %v", device.Title, err),
 				})
-				// TODO: maybe
-				//app.redrawDeviceList()
 				return
 			}
 		}()

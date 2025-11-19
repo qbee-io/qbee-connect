@@ -5,6 +5,8 @@ go 1.25
 require (
 	fyne.io/fyne/v2 v2.7.0
 	go.qbee.io/client v1.2025.44
+	golang.org/x/term v0.33.0
+	golang.org/x/text v0.27.0
 )
 
 require (
@@ -47,7 +49,5 @@ require (
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/term v0.33.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
