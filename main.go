@@ -35,6 +35,28 @@ https://github.com/massalabs/station/blob/main/Taskfile.yml
 
 */
 
+/*
+- pinning of devices
+    - persisting of devices and port forwarding locally
+
+- Auto-connect
+    - This needs to be account specific
+
+- profile support (switch between profiles, eg, different logins)
+
+- search support:
+    - device name
+    - group id
+    - tags
+
+- Show connected devices (potentially in a separate tab) - or check box
+- Show connect devices (
+
+- Change "connect" button text (Open tunnel, stop tunnel)
+
+- "Disconnect all" button
+*/
+
 // page state
 type deviceModel struct {
 	deviceData        *client.InventoryListResponse
