@@ -1,6 +1,8 @@
 package main
 
-import "sync"
+import (
+	"sync"
+)
 
 type connectionsMap struct {
 	items map[string]*deviceConnections
@@ -30,4 +32,12 @@ func (cm *connectionsMap) delete(deviceID string) {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
 	delete(cm.items, deviceID)
+}
+
+func (cm *connectionsMap) iterate(f func(string, *deviceConnections)) {
+	cm.mutex.Lock()
+	defer cm.mutex.Unlock()
+	for k, v := range cm.items {
+		f(k, v)
+	}
 }

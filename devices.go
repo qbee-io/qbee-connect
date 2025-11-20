@@ -7,13 +7,27 @@ import (
 	"go.qbee.io/client"
 )
 
+const defaultPageSize = 10
+const defaultOffset = 0
+const defaultSortField = "title"
+const defaultSortDirection = client.SortDirectionAsc
+const defaultReportType = "short"
+const defaultSearchTerm = ""
+
 func newDeviceModel() *deviceModel {
 	return &deviceModel{
 		deviceData:  &client.InventoryListResponse{},
-		pageSize:    10,
 		currentPage: 0,
-		offset:      0,
-		search:      &client.InventoryListSearch{},
+		query: &client.InventoryListQuery{
+			SortField:     defaultSortField,
+			SortDirection: defaultSortDirection,
+			ReportType:    defaultReportType,
+			Offset:        defaultOffset,
+			ItemsPerPage:  defaultPageSize,
+			Search: client.InventoryListSearch{
+				Title: defaultSearchTerm,
+			},
+		},
 	}
 }
 
@@ -21,8 +35,8 @@ func (m *deviceModel) totalPages() int {
 	if m.deviceData.Total == 0 {
 		return 1
 	}
-	pages := m.deviceData.Total / m.pageSize
-	if m.deviceData.Total%m.pageSize != 0 {
+	pages := m.deviceData.Total / m.query.ItemsPerPage
+	if m.deviceData.Total%m.query.ItemsPerPage != 0 {
 		pages++
 	}
 
@@ -31,18 +45,9 @@ func (m *deviceModel) totalPages() int {
 
 // loadDevices calls qbee-cli and unmarshals the JSON.
 // Adjust the command and JSON schema to match your environment.
-func (app *App) loadDevices(ctx context.Context, search *client.InventoryListSearch, offset, itemsPerPage int) (*client.InventoryListResponse, error) {
+func (app *App) loadDevices(ctx context.Context) (*client.InventoryListResponse, error) {
 
-	query := client.InventoryListQuery{
-		Search:        *search,
-		SortField:     "title",
-		SortDirection: client.SortDirectionAsc,
-		ReportType:    "short",
-		Offset:        offset,
-		ItemsPerPage:  itemsPerPage,
-	}
-
-	devices, err := app.cli.ListDeviceInventory(ctx, query)
+	devices, err := app.cli.ListDeviceInventory(ctx, *app.deviceModel.query)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching device list: %w", err)
 	}

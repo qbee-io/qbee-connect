@@ -7,7 +7,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -60,11 +59,9 @@ https://github.com/massalabs/station/blob/main/Taskfile.yml
 // page state
 type deviceModel struct {
 	deviceData        *client.InventoryListResponse
-	pageSize          int
 	currentPage       int
-	offset            int
-	search            *client.InventoryListSearch
 	activeTunnelsOnly bool
+	query             *client.InventoryListQuery
 }
 
 type deviceConnections struct {
@@ -84,6 +81,7 @@ type App struct {
 	cli            *client.Client
 	ctx            context.Context
 	connectionsMap *connectionsMap
+	savedConns     map[string][]client.RemoteAccessTarget
 	deviceModel    *deviceModel
 	deviceList     *fyne.Container
 }
@@ -158,6 +156,7 @@ func newApp() *App {
 		connectionsMap: connectionsMap,
 		deviceModel:    newDeviceModel(),
 		deviceList:     container.NewVBox(),
+		savedConns:     make(map[string][]client.RemoteAccessTarget),
 	}
 }
 
@@ -196,6 +195,8 @@ func main() {
 	app := newApp()
 	w := app.mainWin
 
+	app.loadSavedConnections()
+
 	app.makeTray()
 	app.mainWin.SetMainMenu(app.makeMenu())
 
@@ -223,33 +224,36 @@ func main() {
 			searchEntry.Add(textSearch)
 
 			textSearch.OnSubmitted = func(searchTerm string) {
+				var search client.InventoryListSearch
 				if searchType == "Tag" {
 					// Need to search by exact match or with * suffix
-					app.deviceModel.search = &client.InventoryListSearch{
+					search = client.InventoryListSearch{
 						Tags: []string{searchTerm},
 					}
 				} else {
-					app.deviceModel.search = &client.InventoryListSearch{
+					search = client.InventoryListSearch{
 						Title: searchTerm,
 					}
 				}
 				app.deviceModel.currentPage = 0
+				app.deviceModel.query.Search = search
 				err := app.refreshDeviceListUI(pageInfoLabel)
 				if err != nil {
-					deviceFetchError.Show()
-					log.Println("refresh error:", err)
-				} else {
-					deviceFetchError.Hide()
+					app.fyneApp.SendNotification(&fyne.Notification{
+						Title:   "Device Fetch Error",
+						Content: "Failed to load devices for search: " + err.Error(),
+					})
 				}
 			}
 			app.deviceModel.currentPage = 0
 			err := app.refreshDeviceListUI(pageInfoLabel)
 			if err != nil {
-				deviceFetchError.Show()
-				log.Println("refresh error:", err)
-			} else {
-				deviceFetchError.Hide()
+				app.fyneApp.SendNotification(&fyne.Notification{
+					Title:   "Device Fetch Error",
+					Content: "Failed to load devices for selected group: " + err.Error(),
+				})
 			}
+
 			searchEntry.Refresh()
 			return
 
@@ -259,7 +263,10 @@ func main() {
 			allGroups, err := app.cli.GroupTreeGet(app.ctx, false)
 
 			if err != nil {
-				log.Println("failed to load groups for search dropdown:", err)
+				app.fyneApp.SendNotification(&fyne.Notification{
+					Title:   "Group Fetch Error",
+					Content: "Failed to load groups for search dropdown: " + err.Error(),
+				})
 				return
 			}
 
@@ -276,13 +283,16 @@ func main() {
 			// implement search by group
 			groupDropdown := widget.NewSelect(groupBreadCrumbs, func(selected string) {
 				// set search filter to selected group
-				app.deviceModel.search = &client.InventoryListSearch{
+				app.deviceModel.query.Search = client.InventoryListSearch{
 					Ancestors: []string{groupMap[selected]},
 				}
 				app.deviceModel.currentPage = 0
 				err := app.refreshDeviceListUI(pageInfoLabel)
 				if err != nil {
-					log.Println("refresh error:", err)
+					app.fyneApp.SendNotification(&fyne.Notification{
+						Title:   "Device Fetch Error",
+						Content: "Failed to load devices for selected group: " + err.Error(),
+					})
 				}
 			})
 			groupDropdown.SetSelectedIndex(0)
@@ -291,11 +301,12 @@ func main() {
 			searchEntry.Refresh()
 			err = app.refreshDeviceListUI(pageInfoLabel)
 			if err != nil {
-				deviceFetchError.Show()
-				log.Println("refresh error:", err)
-			} else {
-				deviceFetchError.Hide()
+				app.fyneApp.SendNotification(&fyne.Notification{
+					Title:   "Device Fetch Error",
+					Content: "Failed to load devices for selected group: " + err.Error(),
+				})
 			}
+			searchEntry.Refresh()
 			return
 		}
 		// implement different search types if needed
@@ -405,8 +416,8 @@ func main() {
 func (app *App) refreshDeviceListUI(pageInfoLabel *widget.Label) error {
 	var err error
 
-	app.deviceModel.offset = app.deviceModel.currentPage * app.deviceModel.pageSize
-	app.deviceModel.deviceData, err = app.loadDevices(app.ctx, app.deviceModel.search, app.deviceModel.offset, app.deviceModel.pageSize)
+	app.deviceModel.query.Offset = app.deviceModel.currentPage * app.deviceModel.query.ItemsPerPage
+	app.deviceModel.deviceData, err = app.loadDevices(app.ctx)
 	if err != nil {
 		log.Println("failed to load devices for UI refresh:", err)
 		return err
@@ -422,7 +433,8 @@ func (app *App) refreshDeviceListUI(pageInfoLabel *widget.Label) error {
 }
 
 func (app *App) redrawDeviceList() {
-	app.deviceList.Objects = app.deviceList.Objects[:0]
+	//app.deviceList.Objects = app.deviceList.Objects[:0]
+	app.deviceList.RemoveAll()
 
 	for _, d := range app.deviceModel.deviceData.Items {
 
@@ -475,18 +487,18 @@ func (app *App) buildDeviceRow(d client.InventoryListItem) fyne.CanvasObject {
 	)
 
 	// Group (breadcrumb style). Skop last element (device name)
-	groupLabel := NewMyHoverableWidget(strings.Join(d.AncestorsTitles[0:len(d.AncestorsTitles)-1], " > "))
+	groupLabel := NewLabelHover(strings.Join(d.AncestorsTitles[0:len(d.AncestorsTitles)-1], " > "))
 	groupLabel.Truncation = fyne.TextTruncateEllipsis
 	groupLabel.Alignment = fyne.TextAlignLeading
 
 	// Tags (comma joined)
-	tagsLabel := NewMyHoverableWidget(strings.Join(d.Tags, ", "))
+	tagsLabel := NewLabelHover(strings.Join(d.Tags, ", "))
 	tagsLabel.Truncation = fyne.TextTruncateEllipsis
 	tagsLabel.Alignment = fyne.TextAlignLeading
 
 	var actionsBtn fyne.CanvasObject
 	if _, ok := app.connectionsMap.get(d.NodeID); !ok {
-		actionsBtn = widget.NewButton("Connect", func() {
+		actionsBtn = widget.NewButton("Configure", func() {
 			dialog := app.newConnectDialog(&d)
 			dialog.Show()
 		})
@@ -529,64 +541,4 @@ func statusIcon(status string) fyne.Resource {
 	default:
 		return theme.QuestionIcon()
 	}
-}
-
-// MyHoverableWidget is a custom widget that implements desktop.Hoverable
-type MyHoverableWidget struct {
-	widget.Label
-	isHovered bool
-	popup     *widget.PopUp
-}
-
-// NewMyHoverableWidget creates a new instance of MyHoverableWidget
-func NewMyHoverableWidget(text string) *MyHoverableWidget {
-	w := &MyHoverableWidget{}
-	w.ExtendBaseWidget(w)
-	w.SetText(text)
-	return w
-}
-
-// MouseIn is called when the mouse enters the widget
-func (w *MyHoverableWidget) MouseIn(*desktop.MouseEvent) {
-
-	w.isHovered = true
-
-	// wait a moment to avoid flickering
-
-	// show a tooltip
-	// Create and show tooltip
-	if w.Text != "" {
-		tooltip := widget.NewCard("", w.Text, nil)
-		popup := widget.NewPopUp(tooltip, fyne.CurrentApp().Driver().CanvasForObject(w))
-		position := fyne.CurrentApp().Driver().AbsolutePositionForObject(w)
-		// show the popup just above the widget
-		position.Y -= tooltip.MinSize().Height + 5
-
-		// Store popup reference to hide it on MouseOut
-		w.popup = popup
-
-		time.AfterFunc(200*time.Millisecond, func() {
-			if w.isHovered {
-				popup.ShowAtPosition(position)
-			}
-		})
-	}
-
-	w.Refresh()
-}
-
-// MouseOut is called when the mouse exits the widget
-func (w *MyHoverableWidget) MouseOut() {
-	w.isHovered = false
-	// hide tooltip
-	if w.popup != nil {
-		w.popup.Hide()
-		w.popup = nil
-	}
-	w.Refresh()
-}
-
-// MouseMoved is called when the mouse moves within the widget
-func (w *MyHoverableWidget) MouseMoved(*desktop.MouseEvent) {
-	// You can implement custom logic here if needed
 }
