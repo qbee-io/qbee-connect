@@ -33,11 +33,3 @@ func (cm *connectionsMap) delete(deviceID string) {
 	defer cm.mutex.Unlock()
 	delete(cm.items, deviceID)
 }
-
-func (cm *connectionsMap) iterate(f func(string, *deviceConnections)) {
-	cm.mutex.Lock()
-	defer cm.mutex.Unlock()
-	for k, v := range cm.items {
-		f(k, v)
-	}
-}

@@ -48,7 +48,7 @@ func (app *App) newConnectTargetRow(targetsContainer *fyne.Container, formConten
 	return row
 }
 
-func (app *App) newConnectButton(device *client.InventoryListItem, targetsContainer, formContent *fyne.Container, dialog *widget.PopUp) *widget.Button {
+func (app *App) newConnectButton(device *client.InventoryListItem, targetsContainer *fyne.Container, dialog *widget.PopUp) *widget.Button {
 
 	return widget.NewButton("Save & Connect", func() {
 
@@ -169,7 +169,7 @@ func (app *App) newConnectDialog(device *client.InventoryListItem) *widget.PopUp
 	dialog.Resize(fyne.NewSize(800, 500))
 
 	// Dialog buttons
-	connectBtn := app.newConnectButton(device, targetsContainer, formContent, dialog)
+	connectBtn := app.newConnectButton(device, targetsContainer, dialog)
 
 	controls.Add(connectBtn)
 
