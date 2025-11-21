@@ -5,8 +5,8 @@ go 1.25
 require (
 	fyne.io/fyne/v2 v2.7.0
 	go.qbee.io/client v1.2025.44
-	golang.org/x/term v0.33.0
-	golang.org/x/text v0.27.0
+	golang.org/x/term v0.37.0
+	golang.org/x/text v0.31.0
 )
 
 require (
@@ -44,10 +44,10 @@ require (
 	github.com/xtaci/smux v1.5.34 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
 	go.qbee.io/transport v1.25.28 // indirect
-	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/image v0.24.0 // indirect
-	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
