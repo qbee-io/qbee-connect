@@ -131,15 +131,10 @@ func main() {
 	app.makeTray()
 	app.mainWin.SetMainMenu(app.makeMenu())
 
-	loader := canvas.NewImageFromResource(theme.InfoIcon())
-	loader.FillMode = canvas.ImageFillContain
-	loader.SetMinSize(fyne.NewSize(64, 64))
-
-	app.mainWin.SetContent(
-		container.NewCenter(
-			loader,
-		),
-	)
+	err := app.loadSavedConnections()
+	if err != nil {
+		app.displayError("Load Error", "Failed to load saved connections: "+err.Error())
+	}
 
 	app.mainWin.SetIcon(fyne.NewStaticResource("qbee-connect-icon.png", trayIcon))
 	searchEntry := container.NewVBox()
@@ -165,7 +160,7 @@ func main() {
 
 	// Initial device list load
 
-	err := app.refreshDeviceListUI()
+	err = app.refreshDeviceListUI()
 	if err != nil {
 		app.displayError("Device Fetch Error", "Failed to load devices: "+err.Error())
 	}
