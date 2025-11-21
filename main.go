@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -84,6 +83,7 @@ type App struct {
 	savedConns     map[string][]client.RemoteAccessTarget
 	deviceModel    *deviceModel
 	deviceList     *fyne.Container
+	pageInfoLabel  *widget.Label
 }
 
 func promptUsernamePassword() (string, string, error) {
@@ -142,8 +142,7 @@ func newApp() *App {
 		}
 	}
 
-	container.NewHBox()
-	a := app.NewWithID("io.qbee.qbee-connect")
+	a := app.New()
 	w := a.NewWindow("qbee-connect - qbee.io")
 
 	connectionsMap := newConnectionsMap()
@@ -156,6 +155,7 @@ func newApp() *App {
 		connectionsMap: connectionsMap,
 		deviceModel:    newDeviceModel(),
 		deviceList:     container.NewVBox(),
+		pageInfoLabel:  widget.NewLabel("Page 1 / 1"),
 		savedConns:     make(map[string][]client.RemoteAccessTarget),
 	}
 }
@@ -193,124 +193,20 @@ func (app *App) getGroupsBreadcrumb(groups client.GroupTree) map[string]string {
 func main() {
 
 	app := newApp()
-	w := app.mainWin
-
 	app.loadSavedConnections()
-
 	app.makeTray()
 	app.mainWin.SetMainMenu(app.makeMenu())
 
-	w.SetIcon(fyne.NewStaticResource("qbee-connect-icon.png", trayIcon))
-
-	// ---- Top toolbar (search + buttons) ----
-
+	app.mainWin.SetIcon(fyne.NewStaticResource("qbee-connect-icon.png", trayIcon))
 	searchEntry := container.NewVBox()
-
-	// drop down of search types could be added here
-	// ---- Pagination controls ----
-	pageInfoLabel := widget.NewLabel("Page 1 / 1")
 
 	deviceFetchError := widget.NewPopUp(
 		widget.NewLabel("Failed to load devices. Please try again."),
-		w.Canvas(),
+		app.mainWin.Canvas(),
 	)
 	deviceFetchError.Hide()
 
-	searchBy := widget.NewSelect([]string{"Device name", "Group", "Tag"}, func(searchType string) {
-		if searchType == "Device name" || searchType == "Tag" {
-			textSearch := widget.NewEntry()
-			textSearch.SetPlaceHolder("Search by " + searchType)
-			searchEntry.RemoveAll()
-			searchEntry.Add(textSearch)
-
-			textSearch.OnSubmitted = func(searchTerm string) {
-				var search client.InventoryListSearch
-				if searchType == "Tag" {
-					// Need to search by exact match or with * suffix
-					search = client.InventoryListSearch{
-						Tags: []string{searchTerm},
-					}
-				} else {
-					search = client.InventoryListSearch{
-						Title: searchTerm,
-					}
-				}
-				app.deviceModel.currentPage = 0
-				app.deviceModel.query.Search = search
-				err := app.refreshDeviceListUI(pageInfoLabel)
-				if err != nil {
-					app.fyneApp.SendNotification(&fyne.Notification{
-						Title:   "Device Fetch Error",
-						Content: "Failed to load devices for search: " + err.Error(),
-					})
-				}
-			}
-			app.deviceModel.currentPage = 0
-			err := app.refreshDeviceListUI(pageInfoLabel)
-			if err != nil {
-				app.fyneApp.SendNotification(&fyne.Notification{
-					Title:   "Device Fetch Error",
-					Content: "Failed to load devices for selected group: " + err.Error(),
-				})
-			}
-
-			searchEntry.Refresh()
-			return
-
-		}
-		if searchType == "Group" {
-
-			allGroups, err := app.cli.GroupTreeGet(app.ctx, false)
-
-			if err != nil {
-				app.fyneApp.SendNotification(&fyne.Notification{
-					Title:   "Group Fetch Error",
-					Content: "Failed to load groups for search dropdown: " + err.Error(),
-				})
-				return
-			}
-
-			// get breadcrumb strings
-			groupMap := app.getGroupsBreadcrumb(*allGroups)
-
-			groupBreadCrumbs := make([]string, 0, len(groupMap))
-
-			for k := range groupMap {
-				groupBreadCrumbs = append(groupBreadCrumbs, k)
-			}
-
-			sort.Strings(groupBreadCrumbs)
-			// implement search by group
-			groupDropdown := widget.NewSelect(groupBreadCrumbs, func(selected string) {
-				// set search filter to selected group
-				app.deviceModel.query.Search = client.InventoryListSearch{
-					Ancestors: []string{groupMap[selected]},
-				}
-				app.deviceModel.currentPage = 0
-				err := app.refreshDeviceListUI(pageInfoLabel)
-				if err != nil {
-					app.fyneApp.SendNotification(&fyne.Notification{
-						Title:   "Device Fetch Error",
-						Content: "Failed to load devices for selected group: " + err.Error(),
-					})
-				}
-			})
-			groupDropdown.SetSelectedIndex(0)
-			searchEntry.RemoveAll()
-			searchEntry.Add(groupDropdown)
-			searchEntry.Refresh()
-			err = app.refreshDeviceListUI(pageInfoLabel)
-			if err != nil {
-				app.fyneApp.SendNotification(&fyne.Notification{
-					Title:   "Device Fetch Error",
-					Content: "Failed to load devices for selected group: " + err.Error(),
-				})
-			}
-			searchEntry.Refresh()
-			return
-		}
-		// implement different search types if needed
-	})
+	searchBy := app.setupSearchBySelect(searchEntry)
 	searchBy.SetSelected("Device name")
 
 	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {})
@@ -318,7 +214,7 @@ func main() {
 	filterActiveTunnels := widget.NewCheck("Active tunnels only", func(checked bool) {
 		app.deviceModel.currentPage = 0
 		app.deviceModel.activeTunnelsOnly = checked
-		err := app.refreshDeviceListUI(pageInfoLabel)
+		err := app.refreshDeviceListUI()
 		if err != nil {
 			deviceFetchError.Show()
 			log.Println("refresh error:", err)
@@ -352,21 +248,21 @@ func main() {
 	prevButton := widget.NewButtonWithIcon("", theme.NavigateBackIcon(), func() {
 		if app.deviceModel.currentPage > 0 {
 			app.deviceModel.currentPage--
-			app.refreshDeviceListUI(pageInfoLabel)
+			app.refreshDeviceListUI()
 
 		}
 	})
 	nextButton := widget.NewButtonWithIcon("", theme.NavigateNextIcon(), func() {
 		if app.deviceModel.currentPage < app.deviceModel.totalPages()-1 {
 			app.deviceModel.currentPage++
-			app.refreshDeviceListUI(pageInfoLabel)
+			app.refreshDeviceListUI()
 		}
 	})
 
 	pagination := container.NewHBox(
 		layout.NewSpacer(),
 		prevButton,
-		pageInfoLabel,
+		app.pageInfoLabel,
 		nextButton,
 	)
 
@@ -380,11 +276,11 @@ func main() {
 	)
 
 	root := container.NewBorder(topBar, nil, nil, nil, content)
-	w.SetContent(root)
+	app.mainWin.SetContent(root)
 
 	// ---- Handlers ----
 	refresh := func() {
-		err := app.refreshDeviceListUI(pageInfoLabel)
+		err := app.refreshDeviceListUI()
 		if err != nil {
 			deviceFetchError.Show()
 			log.Println("refresh error:", err)
@@ -395,7 +291,7 @@ func main() {
 
 	refreshButton.OnTapped = refresh
 
-	err := app.refreshDeviceListUI(pageInfoLabel)
+	err := app.refreshDeviceListUI()
 	if err != nil {
 		deviceFetchError.Show()
 		log.Println("refresh error:", err)
@@ -403,17 +299,17 @@ func main() {
 		deviceFetchError.Hide()
 	}
 
-	w.SetCloseIntercept(func() {
-		w.Hide()
+	app.mainWin.SetCloseIntercept(func() {
+		app.mainWin.Hide()
 	})
 
-	w.Resize(fyne.NewSize(800, 600))
+	app.mainWin.Resize(fyne.NewSize(800, 600))
 	// ---- Show window ----
-	w.ShowAndRun()
+	app.mainWin.ShowAndRun()
 }
 
 // refreshDeviceListUI rebuilds the list for the current page.
-func (app *App) refreshDeviceListUI(pageInfoLabel *widget.Label) error {
+func (app *App) refreshDeviceListUI() error {
 	var err error
 
 	app.deviceModel.query.Offset = app.deviceModel.currentPage * app.deviceModel.query.ItemsPerPage
@@ -424,8 +320,7 @@ func (app *App) refreshDeviceListUI(pageInfoLabel *widget.Label) error {
 	}
 
 	app.redrawDeviceList()
-
-	pageInfoLabel.SetText(
+	app.pageInfoLabel.SetText(
 		fmt.Sprintf("Page %d / %d", app.deviceModel.currentPage+1, app.deviceModel.totalPages()),
 	)
 
@@ -438,13 +333,12 @@ func (app *App) redrawDeviceList() {
 
 	for _, d := range app.deviceModel.deviceData.Items {
 
-		if app.deviceModel.activeTunnelsOnly {
-			if _, ok := app.connectionsMap.get(d.NodeID); !ok {
-				continue
-			}
+		existingConnection, ok := app.connectionsMap.get(d.NodeID)
+		// Filter active tunnels only if the option is set
+		if app.deviceModel.activeTunnelsOnly && !ok {
+			continue
 		}
-
-		row := app.buildDeviceRow(d)
+		row := app.buildDeviceRow(d, existingConnection)
 		app.deviceList.Add(row)
 	}
 
@@ -474,7 +368,7 @@ func (app *App) makeTray() {
 }
 
 // buildDeviceRow builds a single row similar to the qbee web UI.
-func (app *App) buildDeviceRow(d client.InventoryListItem) fyne.CanvasObject {
+func (app *App) buildDeviceRow(d client.InventoryListItem, existingConnection *deviceConnections) fyne.CanvasObject {
 	// Device name (left aligned)
 	deviceLabel := widget.NewLabel(d.Title)
 
@@ -497,18 +391,16 @@ func (app *App) buildDeviceRow(d client.InventoryListItem) fyne.CanvasObject {
 	tagsLabel.Alignment = fyne.TextAlignLeading
 
 	var actionsBtn fyne.CanvasObject
-	if _, ok := app.connectionsMap.get(d.NodeID); !ok {
+	if existingConnection == nil {
 		actionsBtn = widget.NewButton("Configure", func() {
 			dialog := app.newConnectDialog(&d)
 			dialog.Show()
 		})
 	} else {
 		actionsBtn = widget.NewButton("Disconnect", func() {
-			if conn, ok := app.connectionsMap.get(d.NodeID); ok {
-				conn.cancel()
-				app.connectionsMap.delete(d.NodeID)
-				app.redrawDeviceList()
-			}
+			existingConnection.cancel()
+			app.connectionsMap.delete(d.NodeID)
+			app.redrawDeviceList()
 		})
 	}
 
