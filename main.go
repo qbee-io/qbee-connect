@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -15,7 +15,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"golang.org/x/term"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -86,59 +85,17 @@ type App struct {
 	pageInfoLabel  *widget.Label
 }
 
-func promptUsernamePassword() (string, string, error) {
-	var email string
-	fmt.Print("Email: ")
-	_, err := fmt.Scanln(&email)
-	if err != nil {
-		return "", "", err
-	}
-
-	fmt.Print("Password: ")
-	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
-	if err != nil {
-		return "", "", err
-	}
-	password := string(bytePassword)
-	fmt.Println() // Move to next line after password input
-
-	return email, password, nil
-}
-
 func newApp() *App {
 	ctx := context.Background()
 	var cli *client.Client
 	var err error
 	cli, err = client.LoginGetAuthenticatedClient(ctx)
 
+	//
 	if err != nil {
-
-		baseURL := os.Getenv("QBEE_BASEURL")
-		if baseURL == "" {
-			baseURL = "https://www.app.qbee.io"
-		}
-
-		username, password, err := promptUsernamePassword()
+		cli, err = terminalLogin()
 		if err != nil {
-			log.Fatalln("Failed to read username/password:", err)
-		}
-
-		// read username from stdin and do interactive login
-
-		cli = client.New().WithBaseURL(baseURL)
-		err = cli.Authenticate(ctx, username, password)
-		if err != nil {
-			log.Fatalln("Failed to authenticate qbee client:", err)
-		}
-
-		config := &client.LoginConfig{
-			BaseURL:      baseURL,
-			AuthToken:    cli.GetAuthToken(),
-			RefreshToken: cli.GetRefreshToken(),
-		}
-		err = client.LoginWriteConfig(*config)
-		if err != nil {
-			log.Fatalln("Failed to write login config:", err)
+			log.Fatalln("failed to login:", err)
 		}
 	}
 
@@ -160,66 +117,65 @@ func newApp() *App {
 	}
 }
 
-func (app *App) getGroupsBreadcrumb(groups client.GroupTree) map[string]string {
-
-	result := make(map[string]string)
-
-	var traverse func(node *client.GroupTreeNode, path []string)
-	traverse = func(node *client.GroupTreeNode, path []string) {
-		if node == nil {
-			return
-		}
-
-		// Append current node title to path
-		newPath := append(path, node.Title)
-
-		// Recurse for each child
-		for _, child := range node.Nodes {
-			if child.Type == client.NodeTypeGroup {
-				traverse(&child, newPath)
-			}
-		}
-		if node.Type == client.NodeTypeGroup {
-			result[strings.Join(newPath, " > ")] = node.NodeID
-			return
-		}
-	}
-
-	traverse(&groups.Tree, []string{})
-
-	return result
+func (app *App) displayError(title, content string) {
+	app.fyneApp.SendNotification(&fyne.Notification{
+		Title:   title,
+		Content: content,
+	})
 }
 
 func main() {
 
 	app := newApp()
-	app.loadSavedConnections()
+
 	app.makeTray()
 	app.mainWin.SetMainMenu(app.makeMenu())
 
+	loader := canvas.NewImageFromResource(theme.InfoIcon())
+	loader.FillMode = canvas.ImageFillContain
+	loader.SetMinSize(fyne.NewSize(64, 64))
+
+	app.mainWin.SetContent(
+		container.NewCenter(
+			loader,
+		),
+	)
+
 	app.mainWin.SetIcon(fyne.NewStaticResource("qbee-connect-icon.png", trayIcon))
 	searchEntry := container.NewVBox()
-
-	deviceFetchError := widget.NewPopUp(
-		widget.NewLabel("Failed to load devices. Please try again."),
-		app.mainWin.Canvas(),
-	)
-	deviceFetchError.Hide()
 
 	searchBy := app.setupSearchBySelect(searchEntry)
 	searchBy.SetSelected("Device name")
 
 	refreshButton := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {})
+	refreshButton.OnTapped = func() {
+		go func() {
+			fyne.DoAndWait(func() {
+				refreshButton.Disable()
+			})
+			time.Sleep(100 * time.Millisecond) // allow UI to update
+			fyne.DoAndWait(func() {
+				app.refreshDeviceListUI()
+			})
+			defer fyne.DoAndWait(func() {
+				refreshButton.Enable()
+			})
+		}()
+	}
+
+	// Initial device list load
+
+	err := app.refreshDeviceListUI()
+	if err != nil {
+		app.displayError("Device Fetch Error", "Failed to load devices: "+err.Error())
+	}
 
 	filterActiveTunnels := widget.NewCheck("Active tunnels only", func(checked bool) {
 		app.deviceModel.currentPage = 0
 		app.deviceModel.activeTunnelsOnly = checked
 		err := app.refreshDeviceListUI()
 		if err != nil {
-			deviceFetchError.Show()
-			log.Println("refresh error:", err)
-		} else {
-			deviceFetchError.Hide()
+			app.displayError("Device Fetch Error", "Failed to load devices for active tunnels filter: "+err.Error())
 		}
 	})
 
@@ -260,7 +216,7 @@ func main() {
 	})
 
 	pagination := container.NewHBox(
-		layout.NewSpacer(),
+		layout.NewSpacer(), // fill space to push to right
 		prevButton,
 		app.pageInfoLabel,
 		nextButton,
@@ -268,43 +224,22 @@ func main() {
 
 	// ---- Center content: header + list + pagination ----
 	content := container.NewBorder(
-		header,
-		pagination,
-		nil,
-		nil,
-		app.deviceList,
+		header,         // top content
+		pagination,     // bottom content
+		nil,            // left content
+		nil,            // right content
+		app.deviceList, // middle content
 	)
 
 	root := container.NewBorder(topBar, nil, nil, nil, content)
 	app.mainWin.SetContent(root)
 
-	// ---- Handlers ----
-	refresh := func() {
-		err := app.refreshDeviceListUI()
-		if err != nil {
-			deviceFetchError.Show()
-			log.Println("refresh error:", err)
-		} else {
-			deviceFetchError.Hide()
-		}
-	}
-
-	refreshButton.OnTapped = refresh
-
-	err := app.refreshDeviceListUI()
-	if err != nil {
-		deviceFetchError.Show()
-		log.Println("refresh error:", err)
-	} else {
-		deviceFetchError.Hide()
-	}
-
 	app.mainWin.SetCloseIntercept(func() {
 		app.mainWin.Hide()
 	})
 
-	app.mainWin.Resize(fyne.NewSize(800, 600))
 	// ---- Show window ----
+	app.mainWin.Resize(fyne.NewSize(800, 600))
 	app.mainWin.ShowAndRun()
 }
 

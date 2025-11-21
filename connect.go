@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"slices"
 
 	"fyne.io/fyne/v2"
@@ -222,11 +223,14 @@ func (app *App) saveConnections(nodeID string, targets []client.RemoteAccessTarg
 
 }
 
-func (app *App) loadSavedConnections() {
+func (app *App) loadSavedConnections() error {
 
 	fileDescriptor, err := app.fyneApp.Storage().Open(connectionsFileName)
 	if err != nil {
-		return
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("error opening connections file: %w", err)
 	}
 	defer fileDescriptor.Close()
 
@@ -239,7 +243,9 @@ func (app *App) loadSavedConnections() {
 				Content: "Failed to load saved connections: " + err.Error(),
 			},
 		)
+		return err
 	}
 
 	app.savedConns = data
+	return nil
 }

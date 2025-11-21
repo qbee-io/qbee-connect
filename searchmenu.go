@@ -1,7 +1,9 @@
 package main
 
 import (
+	"net/http"
 	"sort"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
@@ -24,7 +26,8 @@ func (app *App) setupSearchBySelect(searchEntry *fyne.Container) *widget.Select 
 		searchEntry.RemoveAll()
 
 		switch selected {
-		case searchByDeviceName, searchByTag:
+		//case searchByDeviceName, searchByTag:
+		case searchByDeviceName:
 			textSearch := app.newTextSearchField(selected)
 			searchEntry.Add(textSearch)
 		case searchByGroup:
@@ -33,6 +36,12 @@ func (app *App) setupSearchBySelect(searchEntry *fyne.Container) *widget.Select 
 				return
 			}
 			searchEntry.Add(groupSearch)
+		case searchByTag:
+			tagSearch := app.newTagSearchSelect()
+			if tagSearch == nil {
+				return
+			}
+			searchEntry.Add(tagSearch)
 		default:
 			searchType := searchByDeviceName
 			textSearch := app.newTextSearchField(searchType)
@@ -137,4 +146,69 @@ func (app *App) newGroupSearchSelect() *widget.Select {
 	groupDropdown.SetSelectedIndex(0)
 
 	return groupDropdown
+}
+
+func (app *App) getGroupsBreadcrumb(groups client.GroupTree) map[string]string {
+
+	result := make(map[string]string)
+
+	var traverse func(node *client.GroupTreeNode, path []string)
+	traverse = func(node *client.GroupTreeNode, path []string) {
+		if node == nil {
+			return
+		}
+
+		// Append current node title to path
+		newPath := append(path, node.Title)
+
+		// Recurse for each child
+		for _, child := range node.Nodes {
+			if child.Type == client.NodeTypeGroup {
+				traverse(&child, newPath)
+			}
+		}
+		if node.Type == client.NodeTypeGroup {
+			result[strings.Join(newPath, " > ")] = node.NodeID
+			return
+		}
+	}
+
+	traverse(&groups.Tree, []string{})
+
+	return result
+}
+
+const tagsListPath = "/api/v2/tagslist"
+
+func (app *App) newTagSearchSelect() *widget.Select {
+
+	allTags := make([]string, 0)
+	err := app.cli.Call(app.ctx, http.MethodGet, tagsListPath, nil, &allTags)
+
+	if err != nil {
+		app.fyneApp.SendNotification(&fyne.Notification{
+			Title:   "Tag Fetch Error",
+			Content: "Failed to load tags for search dropdown: " + err.Error(),
+		})
+		return nil
+	}
+
+	sort.Strings(allTags)
+	tagDropdown := widget.NewSelect(allTags, func(selected string) {
+		// set search filter to selected tag
+		app.deviceModel.query.Search = client.InventoryListSearch{
+			Tags: []string{selected},
+		}
+		app.deviceModel.currentPage = 0
+		err := app.refreshDeviceListUI()
+		if err != nil {
+			app.fyneApp.SendNotification(&fyne.Notification{
+				Title:   "Device Fetch Error",
+				Content: "Failed to load devices for selected tag: " + err.Error(),
+			})
+		}
+	})
+	tagDropdown.SetSelectedIndex(0)
+
+	return tagDropdown
 }

@@ -25,13 +25,7 @@ func NewLabelHover(text string) *LabelHover {
 
 // MouseIn is called when the mouse enters the widget
 func (w *LabelHover) MouseIn(*desktop.MouseEvent) {
-
 	w.isHovered = true
-
-	// wait a moment to avoid flickering
-
-	// show a tooltip
-	// Create and show tooltip
 	if w.Text != "" {
 		tooltip := widget.NewCard("", w.Text, nil)
 		popup := widget.NewPopUp(tooltip, fyne.CurrentApp().Driver().CanvasForObject(w))
@@ -41,7 +35,7 @@ func (w *LabelHover) MouseIn(*desktop.MouseEvent) {
 
 		// Store popup reference to hide it on MouseOut
 		w.popup = popup
-
+		// Delay showing the popup to avoid flicker
 		time.AfterFunc(200*time.Millisecond, func() {
 			if w.isHovered {
 				popup.ShowAtPosition(position)
@@ -65,5 +59,5 @@ func (w *LabelHover) MouseOut() {
 
 // MouseMoved is called when the mouse moves within the widget
 func (w *LabelHover) MouseMoved(*desktop.MouseEvent) {
-	// You can implement custom logic here if needed
+	// No action needed on mouse move for this widget
 }
