@@ -31,3 +31,5 @@ qbee-connect
 # Editor/IDE
 # .idea/
 # .vscode/
+dist/
+output/

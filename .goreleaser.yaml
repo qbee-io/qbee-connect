@@ -96,3 +96,10 @@ msi:
     # Default: inferred from the .wxs file.
     # Since: v2.7.
     version: v3
+
+dmg:
+  - name: "{{.ProjectName}}_{{.Version}}_{{.MsiArch}}"
+    use: binary
+    # use: appbundle
+    replace: true
+    mod_timestamp: "{{ .CommitTimestamp }}"
