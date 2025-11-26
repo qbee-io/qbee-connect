@@ -109,11 +109,21 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download MassaStation Package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           path: output
+
       - name: List files
-        run: ls -la output
+        run: ls -ltR output
+
+      # - name: Run goreleaser-pro
+      #   uses: goreleaser/goreleaser-action@v6
+      #   with:
+      #     distribution: goreleaser-pro
+      #     version: '~> v2'
+      #     args: release --rm-dist --snapshot --config .goreleaser.yaml
+      #   env:
+      #     GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
   # build-macos-installer:
   #   name: Build .pkg installer for MacOS ${{ matrix.arch }}
