@@ -42,12 +42,6 @@ jobs:
 
       - name: Fetch all git tags
         run: git fetch --prune --unshallow --tags
-      
-      # - name: Set Version
-      #   if: ${{ env.VERSION == '' }}
-      #   run: |
-      #     export VERSION=$(git describe --tags --abbrev=0 --match 'v[0-9]*' | sed 's/^v//')-dev
-      #     echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: installing linux dependencies
         if: startsWith(matrix.os, 'ubuntu-')
@@ -129,7 +123,7 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --rm-dist --snapshot --config .goreleaser
+          goreleaser release --clean --snapshot --config .goreleaser
 
   # build-macos-installer:
   #   name: Build .pkg installer for MacOS ${{ matrix.arch }}

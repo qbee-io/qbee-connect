@@ -30,6 +30,15 @@ https://github.com/smaTc/RemotePlayDetached
 
 https://github.com/massalabs/station/blob/main/Taskfile.yml
 
+
+Possible to run in Windows VM without hardware acceleration:
+
+https://github.com/mmozeiko/build-mesa/releases/download/25.3.0/mesa-d3d12-x64-25.3.0.7z
+
+Unpack to directory where qbee-connect.exe is located.
+
+Set environment variable:
+
 */
 
 /*
