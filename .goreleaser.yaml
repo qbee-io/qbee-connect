@@ -33,7 +33,7 @@ msi:
     #
     # Default: '{{.ProjectName}}_{{.MsiArch}}'.
     # Templates: allowed.
-    name: "{{.ProjectName}}_{{.MsiArch}}"
+    name: "{{.ProjectName}}_{{.Version}}_{{.MsiArch}}"
 
     # The WXS file used to create the installers.
     # The file contents go through the templating engine, so you can do things

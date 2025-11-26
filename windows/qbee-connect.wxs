@@ -49,10 +49,10 @@
             Guid='e1e7fc78-4c52-43e4-bf3b-c9dca92b3099'
           >
             <File
-              Id='{{.Binary}}.exe'
-              Name='{{.Binary}}.exe'
+              Id='{{.ProjectName}}.exe'
+              Name='{{.ProjectName}}.exe'
               DiskId='1'
-              Source='{{.Binary}}.exe'
+              Source='{{.ProjectName}}.exe'
               KeyPath='yes'
             />
           </Component>
