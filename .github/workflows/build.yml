@@ -108,22 +108,28 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     steps:
-      - name: Download MassaStation Package
+      - name: Download qbee-connect binaries
         uses: actions/download-artifact@v6
         with:
           path: output
 
-      - name: List files
-        run: ls -ltR output
+      - name: Run goreleaser-pro
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser-pro
+          version: '~> v2'
+          install-only: true
+      
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wixl
 
-      # - name: Run goreleaser-pro
-      #   uses: goreleaser/goreleaser-action@v6
-      #   with:
-      #     distribution: goreleaser-pro
-      #     version: '~> v2'
-      #     args: release --rm-dist --snapshot --config .goreleaser.yaml
-      #   env:
-      #     GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      - name: Build installers
+        env:
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+        run: |
+          goreleaser release --rm-dist --snapshot --config .goreleaser
 
   # build-macos-installer:
   #   name: Build .pkg installer for MacOS ${{ matrix.arch }}
