@@ -91,7 +91,7 @@ jobs:
       - name: Upload qbee-connect binary
         uses: actions/upload-artifact@v4
         with:
-          name: qbee-connect_${{ matrix.target }}_${{ matrix.arch }}_bin
+          name: qbee-connect_${{ matrix.target }}_${{ matrix.arch }}
           path: |
             qbee-connect_${{ matrix.target }}_${{ matrix.arch }}
           if-no-files-found: error
@@ -104,7 +104,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Download qbee-connect binaries
         uses: actions/download-artifact@v6
         with:
