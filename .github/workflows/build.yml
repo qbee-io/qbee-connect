@@ -119,13 +119,22 @@ jobs:
       - name: Install packaging dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y wixl genisoimage
+          sudo apt-get install -y wixl genisoimage  
 
       - name: Build installers
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
           goreleaser release --clean --snapshot --config .goreleaser.yaml
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: qbee-connect-installers
+          path: |
+            dist/msi/*/*.msi
+            dist/dmg/*/*.dmg
+          if-no-files-found: error
+          retention-days: 7
 
 
   # https://github.com/goreleaser/example-notarized-apps/blob/main/.github/workflows/release.yml
