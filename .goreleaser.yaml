@@ -24,81 +24,16 @@ builds:
     binary: bin/{{.ProjectName}}
 
 msi:
-  - # ID of the resulting installer.
-    #
-    # Default: the project name.
-    # id: foo
-
-    # Filename of the installer (without the extension).
-    #
-    # Default: '{{.ProjectName}}_{{.MsiArch}}'.
-    # Templates: allowed.
-    name: "{{.ProjectName}}_{{.Version}}_{{.MsiArch}}"
-
-    # The WXS file used to create the installers.
-    # The file contents go through the templating engine, so you can do things
-    # like `{{.Version}}` inside of it.
-    #
-    # Templates: allowed.
-    # Required.
-    wxs: ./windows/Product.wxs
-
-    # IDs of the archives to use.
-    # Empty means all IDs.
-    # ids:
-    #   - foo
-    #   - bar
-
-    # GOAMD64 to specify which amd64 version to use if there are multiple
-    # versions from the build section.
-    #
-    # Default: v1.
-    # goamd64: v1
-
-    # More files that will be available in the context in which the installer
-    # will be built.
+  - name: "{{.ProjectName}}_{{.Version}}_{{.MsiArch}}"
+    wxs: ./windows/qbee-connect.wks
     extra_files:
       - windows/qbee.ico
-
-    # Sets extensions to msitools/wix.
-    # See: https://wixtoolset.org/docs/v3/howtos/general/extension_usage_introduction/
-    #
-    # Templates: allowed.
-    # Since: v2.6.
-    # extensions:
-    #  - '{{ if eq .Runtime.Goos "windows" }}WixUIExtension{{ end }}'
-    #  - "WixUtilExtension"
-
-    # Whether to disable this particular MSI configuration.
-    #
-    # Templates: allowed.
-    # Since: v2.12.
-    # disable: "{{ .IsSnapshot }}"
-
-    # Whether to remove the archives from the artifact list.
-    # If left as false, your end release will have both the zip and the msi
-    # files.
     replace: true
-
-    # Set the modified timestamp on the output installer, typically
-    # you would do this to ensure a build was reproducible.
-    # Pass an empty string to skip modifying the output.
-    #
-    # Templates: allowed.
     mod_timestamp: "{{ .CommitTimestamp }}"
-
-    # Schema version to use.
-    # msitools only supports v3.
-    # wixtoolset v3 supports v3.
-    # wix v4/v5 supports v4.
-    #
-    # Valid options: 'v3', 'v4'.
-    # Default: inferred from the .wxs file.
-    # Since: v2.7.
     version: v3
 
 dmg:
-  - name: "{{.ProjectName}}_{{.Version}}_{{.MsiArch}}"
+  - name: "{{.ProjectName}}_{{.Arch}}"
     use: binary
     # use: appbundle
     replace: true

@@ -7,7 +7,7 @@
 
         <Package InstallerVersion='200' Compressed='yes' InstallScope='perMachine'/>
 
-        <Icon Id="qbee.icon" SourceFile="qbee.ico"/>
+        <Icon Id="qbee.icon" SourceFile="windows/qbee.ico"/>
         <Property Id="ARPPRODUCTICON" Value="qbee.icon" />
         
         <Media Id='1' Cabinet='qbee-connect.cab' EmbedCab='yes' />

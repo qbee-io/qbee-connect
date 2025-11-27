@@ -82,23 +82,19 @@ jobs:
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
-          GOARCH=${{ matrix.arch }} fyne build --release --target=${{ matrix.target }} -o qbee-connect 
-      - name: Rename binary for ${{ matrix.target }} on ${{ matrix.arch }}
-        shell: bash
-        run: |
-          mv ./qbee-connect qbee-connect_${{ matrix.target }}_${{ matrix.arch }}
-          
+          GOARCH=${{ matrix.arch }} fyne package --exe qbee-connect --target=${{ matrix.target }}
+     
       - name: Upload qbee-connect binary
         uses: actions/upload-artifact@v4
         with:
           name: qbee-connect_${{ matrix.target }}_${{ matrix.arch }}
           path: |
-            qbee-connect_${{ matrix.target }}_${{ matrix.arch }}
+            qbee-connect*
           if-no-files-found: error
           retention-days: 7
 
-  build-non-macos-installers:
-    name: Build non-MacOS installers
+  build-installers:
+    name: Build installers
     needs: build
     runs-on: ubuntu-24.04
     steps:
@@ -109,6 +105,9 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           path: output
+
+      - name: list files
+        run: ls -ltR output
 
       - name: Run goreleaser-pro
         uses: goreleaser/goreleaser-action@v6
