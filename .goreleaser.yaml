@@ -8,11 +8,11 @@ builds:
       - "linux_amd64"
 
     prebuilt:
-      path: output/{{.ProjectName}}_{{ .Os }}_{{ .Arch }}/{{.ProjectName}
-    binary: bin/{{.ProjectName}}
+      path: output/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ .ProjectName }}
+    binary: bin/{{ .ProjectName }}
 
 msi:
-  - name: "{{.ProjectName}}_{{.Version}}_{{.MsiArch}}"
+  - name: "{{ .ProjectName }}_{{ .Version }}_{{ .MsiArch }}"
     wxs: ./windows/qbee-connect.wks
     extra_files:
       - windows/qbee.ico
@@ -25,7 +25,7 @@ app_bundles:
     bundle: io.qbee.qbee-connect
 
 dmg:
-  - name: "{{.ProjectName}}_{{.Arch}}"
+  - name: "{{ .ProjectName }}_{{ .Arch }}"
     use: appbundle
     replace: true
     mod_timestamp: "{{ .CommitTimestamp }}"
