@@ -11,12 +11,12 @@
   {{ end }}
   <Product
     Name='{{.ProjectName}} {{.Version}}'
-    Id='2a4b6525-8d32-44b9-a0dd-6fffc2ba3c8e'
-    UpgradeCode='89d6c332-8d65-4eb8-8415-ed601fde015c'
+    Id='{2a4b6525-8d32-44b9-a0dd-6fffc2ba3c8e}'
+    UpgradeCode='{89d6c332-8d65-4eb8-8415-ed601fde015c}'
     Language='1033'
     Codepage='1252'
     Version='{{.Version}}'
-    Manufacturer='My Company'>
+    Manufacturer='qbee.io'>
 
     <Package
       Id='*'
@@ -46,7 +46,7 @@
         <Directory Id='{{.ProjectName}}' Name='{{.ProjectName}}'>
           <Component
             Id='MainExecutable'
-            Guid='e1e7fc78-4c52-43e4-bf3b-c9dca92b3099'
+            Guid='{e1e7fc78-4c52-43e4-bf3b-c9dca92b3099}'
           >
             <File
               Id='{{.ProjectName}}.exe'

@@ -41,7 +41,7 @@ msi:
     #
     # Templates: allowed.
     # Required.
-    wxs: ./windows/qbee-connect.wxs
+    wxs: ./windows/Product.wxs
 
     # IDs of the archives to use.
     # Empty means all IDs.
@@ -57,8 +57,8 @@ msi:
 
     # More files that will be available in the context in which the installer
     # will be built.
-    # extra_files:
-    #   - logo.ico
+    extra_files:
+      - windows/qbee.ico
 
     # Sets extensions to msitools/wix.
     # See: https://wixtoolset.org/docs/v3/howtos/general/extension_usage_introduction/

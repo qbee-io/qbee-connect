@@ -1,0 +1,53 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+
+    <Product Id='*' UpgradeCode='{1d2e9564-d66e-4520-9c0a-56522f23e729}'
+             Name='{{.ProjectName}}' Language='1033' Version='{{.Version}}'
+             Manufacturer='qbee.io' >
+
+        <Package InstallerVersion='200' Compressed='yes' InstallScope='perMachine'/>
+
+        <Icon Id="qbee.icon" SourceFile="qbee.ico"/>
+        <Property Id="ARPPRODUCTICON" Value="qbee.icon" />
+        
+        <Media Id='1' Cabinet='qbee-connect.cab' EmbedCab='yes' />
+        
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+            <Directory Id='ProgramFilesFolder'>
+                <Directory Id='INSTALLFOLDER' Name='qbee-connect'>
+
+                    <Component Id='ProductComponent' Guid='{a245b65d-2a4a-4094-ada2-8abe0db73a42}'>
+                        <File Id='qbeeConnectExe' Name='qbee-connect.exe' Source='qbee-connect.exe' KeyPath='yes' />
+                    </Component>
+                </Directory>
+            </Directory>
+            
+            <Directory Id="DesktopFolder" Name="Desktop">
+                
+                <Component Id="DesktopShortcutComponent" Guid="{aa66c588-ae73-4a85-bff8-3a6c871c24d8}">
+                    <Shortcut Id="DesktopShortcut"
+                              Directory="DesktopFolder"
+                              Name="qbee-connect"
+                              Target="[INSTALLFOLDER]qbee-connect.exe"
+                              Icon="qbee.icon"
+                              /> 
+                    <RegistryValue Root="HKCU" Key="Software\qbee\qbee-connect" Name="ShortcutInstalled" Type="integer" Value="1" KeyPath="yes"/>
+                    <RemoveFolder Id="DesktopFolder" On="uninstall" /> 
+                </Component>
+            </Directory>
+        </Directory>
+
+        <Feature Id='ProductFeature' Title='{{.ProjectName}}' Level='1'>
+            <ComponentRef Id='ProductComponent' />
+            <ComponentRef Id='DesktopShortcutComponent' />
+        </Feature>
+
+<!--
+        <CustomAction Id="OpenDocsUrl" ExeCommand="cmd /c start https://qbee.io/docs" Execute="immediate" Return="ignore"/>
+
+        <InstallExecuteSequence>
+            <Custom Action="OpenDocsUrl" After="InstallFinalize" /> 
+        </InstallExecuteSequence>
+-->    
+        </Product>
+</Wix>
