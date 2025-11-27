@@ -82,14 +82,14 @@ jobs:
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
-          GOARCH=${{ matrix.arch }} fyne package --exe qbee-connect --target=${{ matrix.target }}
+          GOARCH=${{ matrix.arch }} fyne build --release --target ${{ matrix.target }} --output build/qbee-connect 
      
       - name: Upload qbee-connect binary
         uses: actions/upload-artifact@v4
         with:
           name: qbee-connect_${{ matrix.target }}_${{ matrix.arch }}
           path: |
-            qbee-connect*
+            build/qbee-connect*
           if-no-files-found: error
           retention-days: 7
 

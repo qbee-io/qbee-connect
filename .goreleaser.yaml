@@ -1,26 +1,14 @@
 version: 2
 builds:
   - builder: prebuilt
-
-    # When builder is `prebuilt` there are no defaults for goos, goarch,
-    # goarm, gomips, goamd64 and targets, so you always have to specify them:
     targets:
       - "darwin_amd64"
       - "darwin_arm64"
       - "windows_amd64"
       - "linux_amd64"
 
-    # prebuilt specific options
     prebuilt:
-      # Path must be the template path to the binaries.
-      # GoReleaser removes the `dist` directory before running, so you will likely
-      # want to put the binaries elsewhere.
-      # This field is required when using the `prebuilt` builder.
-
-      path: output/{{.ProjectName}}_{{ .Os }}_{{ .Arch }}/{{.ProjectName}}_{{ .Os }}_{{ .Arch }}
-
-    # Use 'binary' to set the final name of your binary.
-    # This is the name that will be used in archives et al.
+      path: output/{{.ProjectName}}_{{ .Os }}_{{ .Arch }}/{{.ProjectName}
     binary: bin/{{.ProjectName}}
 
 msi:
@@ -32,9 +20,12 @@ msi:
     mod_timestamp: "{{ .CommitTimestamp }}"
     version: v3
 
+app_bundles:
+  - icon: darwin/qbee.icns
+    bundle: io.qbee.qbee-connect
+
 dmg:
   - name: "{{.ProjectName}}_{{.Arch}}"
-    use: binary
-    # use: appbundle
+    use: appbundle
     replace: true
     mod_timestamp: "{{ .CommitTimestamp }}"
