@@ -5,8 +5,8 @@ builds:
     # When builder is `prebuilt` there are no defaults for goos, goarch,
     # goarm, gomips, goamd64 and targets, so you always have to specify them:
     targets:
-#      - "darwin_amd64"
-#      - "darwin_arm64"
+      - "darwin_amd64"
+      - "darwin_arm64"
       - "windows_amd64"
       - "linux_amd64"
 
