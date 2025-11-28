@@ -12,10 +12,6 @@ builds:
 app_bundles:
   - icon: darwin/qbee.icns
     bundle: io.qbee.qbee-connect
-    extra_files:
-      - src: darwin/qbee-macos-volume.icns
-        dst: .VolumeIcon.icns
-    
 
 dmg:
   - name: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
