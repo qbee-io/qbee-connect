@@ -126,7 +126,7 @@ jobs:
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: qbee-connect-installers
+          name: qbee-connect-installers-non-macos
           path: |
             dist/msi/*/*.msi
             dist/dmg/*/*.dmg
@@ -164,7 +164,7 @@ jobs:
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: qbee-connect-installers
+          name: qbee-connect-installers-macos
           path: |
             dist/dmg/*/*.dmg
           if-no-files-found: error
