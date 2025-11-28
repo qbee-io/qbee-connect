@@ -1,0 +1,20 @@
+version: 2
+builds:
+  - builder: prebuilt
+    targets:
+      - "darwin_amd64"
+      - "darwin_arm64"
+
+    prebuilt:
+      path: output/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ .ProjectName }}
+    binary: bin/{{ .ProjectName }}
+
+app_bundles:
+  - icon: darwin/qbee.icns
+    bundle: io.qbee.qbee-connect
+
+dmg:
+  - name: "{{ .ProjectName }}_{{ .Arch }}"
+    use: appbundle
+    replace: true
+    mod_timestamp: "{{ .CommitTimestamp }}"
