@@ -93,10 +93,50 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build-installers:
-    name: Build installers
+  build-installers-non-macos:
+    name: Build installers non-MacOS
     needs: build
     runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download qbee-connect binaries
+        uses: actions/download-artifact@v6
+        with:
+          path: output
+
+      - name: Run goreleaser-pro
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser-pro
+          version: '~> v2'
+          install-only: true
+      
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wixl
+
+      - name: Build installers
+        env:
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+        run: |
+          goreleaser release --clean --snapshot --config .goreleaser.yaml
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: qbee-connect-installers
+          path: |
+            dist/msi/*/*.msi
+            dist/dmg/*/*.dmg
+          if-no-files-found: error
+          retention-days: 7
+
+  build-installers-macos:
+    name: Build installers MacOS
+    needs: build
+    runs-on: macos-14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -115,23 +155,17 @@ jobs:
           distribution: goreleaser-pro
           version: '~> v2'
           install-only: true
-      
-      - name: Install packaging dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wixl genisoimage  
 
       - name: Build installers
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --clean --snapshot --config .goreleaser.yaml
+          goreleaser release --clean --snapshot --config .goreleaser.yaml.macos
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
           name: qbee-connect-installers
           path: |
-            dist/msi/*/*.msi
             dist/dmg/*/*.dmg
           if-no-files-found: error
           retention-days: 7
