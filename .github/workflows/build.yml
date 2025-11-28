@@ -122,7 +122,7 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --clean --snapshot --config .goreleaser.yaml.non-macos
+          goreleaser release --clean --snapshot --config .goreleaser.non-macos.yaml
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
@@ -160,7 +160,17 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --clean --snapshot --config .goreleaser.yaml.macos
+          goreleaser release --clean --snapshot --config .goreleaser.macos.yaml
+     
+      # - name: Add icon to installer
+      #   run: |
+      #     export VOLIME_NAME="qbee-connect_amd64"
+      #     hdiutil convert dist/dmg/qbee-connect_amd64.dmg -format UDRW -o dist/dmg/qbee-connect_temp_amd64_rw.dmg
+      #     SetFile -c icnC "/Volumes/$VOLUME_NAME/.VolumeIcon.icns"
+      #     SetFile -a C "/Volumes/$VOLUME_NAME"
+      #     SetFile -a V "/Volumes/$VOLUME_NAME/.VolumeIcon.icns"
+      #     hdiutil detach "/Volumes/$VOLUME_NAME"
+      #     hdiutil convert -format UDBZ -o qbee-connect_darwinamd64/qbee-connect_amd64-ro-icon.dmg qbee-connect_darwinamd64/qbee-connect_amd64-rw.dmg
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
