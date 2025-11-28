@@ -1,0 +1,19 @@
+version: 2
+builds:
+  - builder: prebuilt
+    targets:
+      - "windows_amd64"
+      - "linux_amd64"
+
+    prebuilt:
+      path: output/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ .ProjectName }}
+    binary: bin/{{ .ProjectName }}
+
+msi:
+  - name: "{{ .ProjectName }}_{{ .Version }}_{{ .MsiArch }}"
+    wxs: ./windows/qbee-connect.wks
+    extra_files:
+      - windows/qbee.ico
+    replace: true
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    version: v3
