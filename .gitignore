@@ -27,7 +27,6 @@ go.work.sum
 # env file
 .env
 connect
-qbee-connect
 # Editor/IDE
 # .idea/
 # .vscode/

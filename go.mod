@@ -4,9 +4,9 @@ go 1.25
 
 require (
 	fyne.io/fyne/v2 v2.7.0
+	fyne.io/x/fyne v0.0.0-20250910205345-ecc79984d005
 	go.qbee.io/client v1.2025.44
 	golang.org/x/term v0.37.0
-	golang.org/x/text v0.31.0
 )
 
 require (
@@ -33,7 +33,6 @@ require (
 	github.com/jpillora/chisel v1.10.1 // indirect
 	github.com/jpillora/sizestr v1.0.0 // indirect
 	github.com/jsummers/gobmp v0.0.0-20230614200233-a9de23ed2e25 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.5.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -49,5 +48,6 @@ require (
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
