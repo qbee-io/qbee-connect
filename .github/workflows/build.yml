@@ -85,8 +85,8 @@ jobs:
           GOARCH=${{ matrix.arch }} fyne build \
             --release \
             --target ${{ matrix.target }} \
-            --output build/qbee-connect \
-            --src cmd/qbee-connect
+            --output $GITHUB_WORKSPACE/build/qbee-connect \
+            --src ./cmd/qbee-connect
      
       - name: Upload qbee-connect binary
         uses: actions/upload-artifact@v4
