@@ -82,7 +82,11 @@ jobs:
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
-          GOARCH=${{ matrix.arch }} fyne build --release --target ${{ matrix.target }} --output build/qbee-connect 
+          GOARCH=${{ matrix.arch }} fyne build \
+            --release \
+            --target ${{ matrix.target }} \
+            --output build/qbee-connect \
+            --src cmd/qbee-connect
      
       - name: Upload qbee-connect binary
         uses: actions/upload-artifact@v4
