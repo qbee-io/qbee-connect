@@ -5,16 +5,18 @@ permissions:
   id-token: write # needed for keyless signing
   attestations: write # needed for provenance
 
+
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+# on:
+#   workflow_dispatch:
 #   workflow_call:
 #     inputs:
 #       tag_name:
 #         type: string
 #         description: "The tag name of the release without v prefix"
-
-# env:
-#   VERSION: ${{ inputs.tag_name }}
 
 jobs:
   build:
@@ -128,8 +130,8 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --split --snapshot
-          GOOS=windows goreleaser release --split --snapshot
+          goreleaser release --split
+          GOOS=windows goreleaser release --split
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
@@ -161,14 +163,6 @@ jobs:
           unlock-keychain: true
           keychain-password: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
 
-      - name: List identities
-        env:
-          KEYCHAIN_NAME: signing-db
-        run: |
-          security find-identity /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
-      # - name: Sync clock
-      #   run: sudo sntp -sS time.apple.com #
-
       - name: import notarization profile
         env:
           MACOS_NOTARY_PROFILE_NAME: ${{ secrets.MACOS_NOTARY_PROFILE_NAME }}
@@ -191,9 +185,6 @@ jobs:
 
           # export the keychain path
           echo "KEYCHAIN_PATH=/Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db" >>$GITHUB_ENV
-      - name: List keychains
-        run: |
-          security list-keychains
 
       - name: Run goreleaser-pro
         uses: goreleaser/goreleaser-action@v6
@@ -208,7 +199,7 @@ jobs:
           MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
           MACOS_NOTARY_PROFILE_NAME: ${{ secrets.MACOS_NOTARY_PROFILE_NAME }}
         run: |
-          goreleaser release --split --snapshot
+          goreleaser release --split
 
           # remove symlinks from dist directory to avoid upload issues
           # with circular references in GitHub Actions
