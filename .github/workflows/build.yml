@@ -128,8 +128,8 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --split --clean --snapshot
-          GOOS=windows goreleaser release --split --clean --snapshot 
+          goreleaser release --split --snapshot
+          GOOS=windows goreleaser release --split --snapshot
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
@@ -174,7 +174,7 @@ jobs:
         run: |
           KEY_PATH=$RUNNER_TEMP/goreleaser.p8
           echo -n "$MACOS_NOTARY_KEY" | base64 --decode -o $KEY_PATH
-          
+
           file $KEY_PATH
           file /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
 
@@ -202,7 +202,7 @@ jobs:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
           MACOS_SIGN_KEYCHAIN: signing-db
         run: |
-          goreleaser release --split --clean --snapshot
+          goreleaser release --split --snapshot
      
           find dist -ls 
       # - name: Add icon to installer
@@ -214,13 +214,15 @@ jobs:
       #     SetFile -a V "/Volumes/$VOLUME_NAME/.VolumeIcon.icns"
       #     hdiutil detach "/Volumes/$VOLUME_NAME"
       #     hdiutil convert -format UDBZ -o qbee-connect_darwinamd64/qbee-connect_amd64-ro-icon.dmg qbee-connect_darwinamd64/qbee-connect_amd64-rw.dmg
-      # - name: Upload installers
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: artifacts-macos
-      #     path: dist/
-      #     if-no-files-found: error
-      #     retention-days: 7
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-macos
+          path: |
+            dist/
+            !dist/darwin/dmg/*/Applications
+          if-no-files-found: error
+          retention-days: 7
 
   release:
     name: Create Release
