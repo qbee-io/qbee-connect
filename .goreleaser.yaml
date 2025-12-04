@@ -24,6 +24,12 @@ sboms:
 checksum:
   name_template: checksums.txt
 
+source:
+  enabled: true
+
+archives:
+   - formats: [ 'tar.gz' ]
+
 msi:
   - name: "{{ .ProjectName }}_{{ .Version }}_{{ .MsiArch }}"
     wxs: ./windows/qbee-connect.wks

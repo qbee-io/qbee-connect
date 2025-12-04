@@ -10,13 +10,6 @@ on:
   push:
     tags:
       - '*'
-# on:
-#   workflow_dispatch:
-#   workflow_call:
-#     inputs:
-#       tag_name:
-#         type: string
-#         description: "The tag name of the release without v prefix"
 
 jobs:
   build:
