@@ -43,15 +43,15 @@ dmg:
     replace: true
     mod_timestamp: "{{ .CommitTimestamp }}"
 
-# notarize:
-#   macos_native:
-#     - enabled: "true"
-#       sign:
-#         keychain: "{{ .Env.MACOS_SIGN_KEYCHAIN }}"
-#         identity: "Developer ID Application: Carlos Becker"
-#         options: [runtime]
+notarize:
+  macos_native:
+    - enabled: "true"
+      sign:
+        keychain: "{{ .Env.KEYCHAIN_PATH }}"
+        identity: "Developer ID Application: Piotr Bulinski"
+        options: [runtime]
 
-#       notarize:
-#         profile_name: "{{ .Env.MACOS_NOTARY_PROFILE_NAME }}"
-#         wait: true
+      notarize:
+        profile_name: "{{ .Env.MACOS_NOTARY_PROFILE_NAME }}"
+        wait: true
 
