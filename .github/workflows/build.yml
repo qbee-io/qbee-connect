@@ -126,13 +126,13 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --clean --snapshot --config .goreleaser.non-macos.yaml
+          goreleaser release --split --clean --snapshot --os linux --os windows
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
           name: qbee-connect-installers-non-macos
           path: |
-            dist/msi/*/*.msi
+            dist/**/*
           if-no-files-found: error
           retention-days: 7
 
@@ -160,7 +160,7 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --clean --snapshot --config .goreleaser.macos.yaml
+          goreleaser release --split --clean --snapshot --os darwin
      
       # - name: Add icon to installer
       #   run: |
@@ -176,7 +176,7 @@ jobs:
         with:
           name: qbee-connect-installers-macos
           path: |
-            dist/dmg/*/*.dmg
+            dist/**/*
           if-no-files-found: error
           retention-days: 7
 

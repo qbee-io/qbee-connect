@@ -1,4 +1,5 @@
 version: 2
+project_name: qbee-connect
 builds:
   - builder: prebuilt
     targets:
@@ -9,6 +10,18 @@ builds:
       path: output/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ .ProjectName }}
     binary: bin/{{ .ProjectName }}
 
+gomod:
+  proxy: true
+
+changelog:
+  use: github-native
+
+sboms:
+  - artifacts: source
+
+checksum:
+  name_template: checksums.txt
+
 app_bundles:
   - icon: darwin/qbee.icns
     bundle: io.qbee.qbee-connect
@@ -18,3 +31,17 @@ dmg:
     use: appbundle
     replace: true
     mod_timestamp: "{{ .CommitTimestamp }}"
+
+notarize:
+  macos_native:
+    - enabled: "true"
+      sign:
+        keychain: "{{ .Env.KEYCHAIN_PATH }}"
+        identity: "Developer ID Application: Carlos Becker"
+        options: [runtime]
+        entitlements: ./path/to/entitlements.xml
+
+      notarize:
+        profile_name: "{{ .Env.MACOS_NOTARY_PROFILE_NAME }}"
+        wait: true
+
