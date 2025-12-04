@@ -203,7 +203,9 @@ jobs:
           MACOS_SIGN_KEYCHAIN: signing-db
         run: |
           goreleaser release --split --snapshot
-     
+
+          # remove symlinks from dist directory to avoid upload issues
+          find dist/darwin -type l -exec rm {} +
       # - name: Add icon to installer
       #   run: |
       #     export VOLIME_NAME="qbee-connect_amd64"
@@ -217,9 +219,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-macos
-          path: |
-            dist/
-            !dist/darwin/dmg/*/*/Applications
+          path: dist/
           if-no-files-found: error
           retention-days: 7
 
