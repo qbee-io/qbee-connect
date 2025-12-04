@@ -134,8 +134,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-linux-windows
-          path: |
-            dist/
+          path: dist/
           if-no-files-found: error
           retention-days: 7
 
@@ -205,6 +204,7 @@ jobs:
         run: |
           goreleaser release --split --clean --snapshot
      
+          find dist -ls 
       # - name: Add icon to installer
       #   run: |
       #     export VOLIME_NAME="qbee-connect_amd64"
@@ -214,14 +214,13 @@ jobs:
       #     SetFile -a V "/Volumes/$VOLUME_NAME/.VolumeIcon.icns"
       #     hdiutil detach "/Volumes/$VOLUME_NAME"
       #     hdiutil convert -format UDBZ -o qbee-connect_darwinamd64/qbee-connect_amd64-ro-icon.dmg qbee-connect_darwinamd64/qbee-connect_amd64-rw.dmg
-      - name: Upload installers
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts-macos
-          path: |
-            dist/
-          if-no-files-found: error
-          retention-days: 7
+      # - name: Upload installers
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: artifacts-macos
+      #     path: dist/
+      #     if-no-files-found: error
+      #     retention-days: 7
 
   release:
     name: Create Release
