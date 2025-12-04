@@ -171,16 +171,16 @@ jobs:
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
           KEY_PATH: ${{ secrets.MACOS_NOTARY_KEY_BASE64 }}
-          KEYCHAIN_PATH: signing-db
+          KEYCHAIN_NAME: signing-db
         run: |
           xcrun notarytool store-credentials "$MACOS_NOTARY_PROFILE_NAME" \
             --key "$KEY_PATH" \
             --key-id "$MACOS_NOTARY_KEY_ID" \
             --issuer "$MACOS_NOTARY_ISSUER_ID" \
-            --keychain $KEYCHAIN_PATH
+            --keychain /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
 
           # export the keychain path
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >>$GITHUB_ENV
+          echo "KEYCHAIN_PATH=/Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db" >>$GITHUB_ENV
       - name: List keychains
         run: |
           security list-keychains
