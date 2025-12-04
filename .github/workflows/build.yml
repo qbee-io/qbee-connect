@@ -135,7 +135,7 @@ jobs:
         with:
           name: artifacts-linux-windows
           path: |
-            dist/**/*
+            dist/
           if-no-files-found: error
           retention-days: 7
 
@@ -219,7 +219,7 @@ jobs:
         with:
           name: artifacts-macos
           path: |
-            dist/**/*
+            dist/
           if-no-files-found: error
           retention-days: 7
 
