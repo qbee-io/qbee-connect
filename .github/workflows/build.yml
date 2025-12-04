@@ -231,6 +231,12 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: Install Cosign for attestation and signing
+        uses: sigstore/cosign-installer@v3.10.1
+
+      - name: Install Syft for SBOM generation
+        uses: anchore/sbom-action/download-syft@v0.20.10
+
       - name: Run goreleaser-pro
         uses: goreleaser/goreleaser-action@v6
         with:
