@@ -170,11 +170,11 @@ jobs:
           MACOS_NOTARY_PROFILE_NAME: ${{ secrets.MACOS_NOTARY_PROFILE_NAME }}
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
-          MACOS_NOTARY_KEY_BASE64: ${{ secrets.MACOS_NOTARY_KEY_BASE64 }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
           KEYCHAIN_NAME: signing-db
         run: |
           KEY_PATH=$RUNNER_TEMP/goreleaser.p8
-          echo -n "$MACOS_NOTARY_KEY_BASE64" | base64 --decode -o $KEY_PATH
+          echo -n "$MACOS_NOTARY_KEY" | base64 --decode -o $KEY_PATH
           
           file $KEY_PATH
           file /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
