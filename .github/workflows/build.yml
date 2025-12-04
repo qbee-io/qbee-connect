@@ -175,6 +175,9 @@ jobs:
         run: |
           KEY_PATH=$RUNNER_TEMP/goreleaser.p8
           echo -n "$MACOS_NOTARY_KEY_BASE64" | base64 --decode -o $KEY_PATH
+          
+          file $KEY_PATH
+          file /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
 
           xcrun notarytool store-credentials "$MACOS_NOTARY_PROFILE_NAME" \
             --key "$KEY_PATH" \
