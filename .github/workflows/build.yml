@@ -162,6 +162,8 @@ jobs:
           keychain-password: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
 
       - name: List identities
+        env:
+          KEYCHAIN_NAME: signing-db
         run: |
           security find-identity /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
       # - name: Sync clock
