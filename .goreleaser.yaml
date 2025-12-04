@@ -48,7 +48,7 @@ notarize:
     - enabled: "true"
       sign:
         keychain: "{{ .Env.KEYCHAIN_PATH }}"
-        identity: "Developer ID Application: Piotr Bulinski"
+        identity: "{{ .Env.MACOS_SIGN_IDENTITY }}"
         options: [runtime]
 
       notarize:

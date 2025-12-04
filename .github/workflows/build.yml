@@ -205,7 +205,7 @@ jobs:
       - name: Build installers
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-          MACOS_SIGN_KEYCHAIN: signing-db
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
         run: |
           goreleaser release --split --snapshot
 
