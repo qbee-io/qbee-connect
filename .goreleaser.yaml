@@ -42,6 +42,7 @@ msi:
 app_bundles:
   - icon: darwin/qbee.icns
     bundle: io.qbee.qbee-connect
+    name: "{{ .ProjectName }}_{{ .Arch }}"
 
 dmg:
   - name: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
