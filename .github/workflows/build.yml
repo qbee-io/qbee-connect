@@ -204,7 +204,6 @@ jobs:
         run: |
           goreleaser release --split --snapshot
      
-          find dist -ls 
       # - name: Add icon to installer
       #   run: |
       #     export VOLIME_NAME="qbee-connect_amd64"
@@ -220,7 +219,7 @@ jobs:
           name: artifacts-macos
           path: |
             dist/
-            !dist/darwin/dmg/*/Applications
+            !dist/darwin/dmg/*/*/Applications
           if-no-files-found: error
           retention-days: 7
 
