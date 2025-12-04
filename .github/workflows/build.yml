@@ -1,7 +1,9 @@
 name: build and upload artifacts
 
 permissions:
-  contents: read
+  contents: write # needed to write releases
+  id-token: write # needed for keyless signing
+  attestations: write # needed for provenance
 
 on:
   workflow_dispatch:
@@ -97,7 +99,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build-installers-non-macos:
+  build-artifacts-linux-windows:
     name: Build installers non-MacOS
     needs: build
     runs-on: ubuntu-24.04
@@ -126,17 +128,18 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
         run: |
-          goreleaser release --split --clean --snapshot --os linux --os windows
+          goreleaser release --split --clean --snapshot
+          GOOS=windows goreleaser release --split --clean --snapshot 
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: qbee-connect-installers-non-macos
+          name: artifacts-linux-windows
           path: |
             dist/**/*
           if-no-files-found: error
           retention-days: 7
 
-  build-installers-macos:
+  build-artifacts-macos:
     name: Build installers MacOS
     needs: build
     runs-on: macos-14
@@ -149,6 +152,39 @@ jobs:
         with:
           path: output
 
+      - name: Import Signing Certificate
+        uses: Apple-Actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.MACOS_SIGN_P12 }}
+          p12-password: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          keychain: signing-db
+          create-keychain: true
+          unlock-keychain: true
+          keychain-password: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+
+      - name: Sync clock
+        run: sudo sntp -sS time.apple.com #
+
+      - name: import notarization profile
+        env:
+          MACOS_NOTARY_PROFILE_NAME: ${{ secrets.MACOS_NOTARY_PROFILE_NAME }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          KEY_PATH: ${{ secrets.MACOS_NOTARY_KEY_BASE64 }}
+          KEYCHAIN_PATH: signing-db
+        run: |
+          xcrun notarytool store-credentials "$MACOS_NOTARY_PROFILE_NAME" \
+            --key "$KEY_PATH" \
+            --key-id "$MACOS_NOTARY_KEY_ID" \
+            --issuer "$MACOS_NOTARY_ISSUER_ID" \
+            --keychain $KEYCHAIN_PATH
+
+          # export the keychain path
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >>$GITHUB_ENV
+      - name: List keychains
+        run: |
+          security list-keychains
+
       - name: Run goreleaser-pro
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -159,8 +195,9 @@ jobs:
       - name: Build installers
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          MACOS_SIGN_KEYCHAIN: signing-db
         run: |
-          goreleaser release --split --clean --snapshot --os darwin
+          goreleaser release --split --clean --snapshot
      
       # - name: Add icon to installer
       #   run: |
@@ -174,12 +211,41 @@ jobs:
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: qbee-connect-installers-macos
+          name: artifacts-macos
           path: |
             dist/**/*
           if-no-files-found: error
           retention-days: 7
 
+  release:
+    name: Create Release
+    needs:
+      - build-artifacts-linux-windows
+      - build-artifacts-macos
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download installers non-MacOS
+        uses: actions/download-artifact@v6
+        with:
+          pattern: artifacts-*
+          path: dist
+          merge-multiple: true
+
+      - name: Run goreleaser-pro
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser-pro
+          version: '~> v2'
+          install-only: true
+
+      - name: Create Release
+        env:
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+        run: |
+          goreleaser continue --merge
 
   # https://github.com/goreleaser/example-notarized-apps/blob/main/.github/workflows/release.yml
 

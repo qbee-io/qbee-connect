@@ -47,10 +47,9 @@ dmg:
 #   macos_native:
 #     - enabled: "true"
 #       sign:
-#         keychain: "{{ .Env.KEYCHAIN_PATH }}"
+#         keychain: "{{ .Env.MACOS_SIGN_KEYCHAIN }}"
 #         identity: "Developer ID Application: Carlos Becker"
 #         options: [runtime]
-#         entitlements: ./path/to/entitlements.xml
 
 #       notarize:
 #         profile_name: "{{ .Env.MACOS_NOTARY_PROFILE_NAME }}"
