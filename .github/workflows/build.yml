@@ -170,9 +170,12 @@ jobs:
           MACOS_NOTARY_PROFILE_NAME: ${{ secrets.MACOS_NOTARY_PROFILE_NAME }}
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
-          KEY_PATH: ${{ secrets.MACOS_NOTARY_KEY_BASE64 }}
+          MACOS_NOTARY_KEY_BASE64: ${{ secrets.MACOS_NOTARY_KEY_BASE64 }}
           KEYCHAIN_NAME: signing-db
         run: |
+          KEY_PATH=$RUNNER_TEMP/goreleaser.p8
+          echo -n "$MACOS_NOTARY_KEY_BASE64" | base64 --decode -o $KEY_PATH
+
           xcrun notarytool store-credentials "$MACOS_NOTARY_PROFILE_NAME" \
             --key "$KEY_PATH" \
             --key-id "$MACOS_NOTARY_KEY_ID" \
