@@ -162,8 +162,8 @@ jobs:
           unlock-keychain: true
           keychain-password: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
 
-      - name: Sync clock
-        run: sudo sntp -sS time.apple.com #
+      # - name: Sync clock
+      #   run: sudo sntp -sS time.apple.com #
 
       - name: import notarization profile
         env:
