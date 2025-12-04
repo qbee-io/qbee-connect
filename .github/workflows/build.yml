@@ -161,6 +161,10 @@ jobs:
           unlock-keychain: true
           keychain-password: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
 
+      - name: list signing identites
+        run: |
+          security find-identity -v -p codesigning signing-db
+
       # - name: Sync clock
       #   run: sudo sntp -sS time.apple.com #
 
@@ -186,9 +190,6 @@ jobs:
 
           # export the keychain path
           echo "KEYCHAIN_PATH=/Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db" >>$GITHUB_ENV
-      - name: List keychains
-        run: |
-          security list-keychains
 
       - name: Run goreleaser-pro
         uses: goreleaser/goreleaser-action@v6
@@ -205,6 +206,7 @@ jobs:
           goreleaser release --split --snapshot
 
           # remove symlinks from dist directory to avoid upload issues
+          # with circular references in GitHub Actions
           find dist/darwin -type l -exec rm {} +
       # - name: Add icon to installer
       #   run: |
