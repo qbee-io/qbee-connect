@@ -14,6 +14,7 @@ import (
 	xwidget "fyne.io/x/fyne/widget"
 )
 
+// SearchBarDelegate defines the methods required by the search bar
 type SearchBarDelegate interface {
 	RefreshUI()
 	SetSearchQuery(query client.InventoryListSearch)
@@ -27,6 +28,7 @@ const (
 	searchTag        = "Tag"
 )
 
+// NewSearchBar creates a new search bar container
 func NewSearchBar(d SearchBarDelegate) *fyne.Container {
 
 	// Create Search Logic (Inline for simplicity or move to components/search.go)
@@ -121,7 +123,6 @@ func newTagsSearchComplete(d SearchBarDelegate) *xwidget.CompletionEntry {
 	return tagSearch
 }
 
-// Group Search Logic
 func newGroupSearchComplete(d SearchBarDelegate) *xwidget.CompletionEntry {
 
 	groups := d.GetAllGroups()
@@ -177,7 +178,6 @@ func newGroupSearchComplete(d SearchBarDelegate) *xwidget.CompletionEntry {
 	return groupSearch
 }
 
-// getGroupsBreadcrumb creates a map of "Group1 > SubgroupA > SubgroupB" to NodeID
 func getGroupsBreadcrumb(groups client.GroupTree) map[string]string {
 
 	result := make(map[string]string)

@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+// MakeMenu constructs the main application menu
 func MakeMenu() *fyne.MainMenu {
 
 	openSettings := func() {

@@ -12,7 +12,7 @@ import (
 	"go.qbee.io/connect/internal/service"
 )
 
-// Actions needed by the table
+// TableDelegate defines the methods required by the device table
 type TableDelegate interface {
 	RefreshUI()
 	GetDeviceModel() *model.DeviceModel

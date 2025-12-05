@@ -16,8 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          sudo apt install -y libgl1-mesa-dev xorg-dev
+      - run: sudo apt install -y libgl1-mesa-dev xorg-dev
       - uses: actions/setup-go@v4
         with:
           go-version: stable

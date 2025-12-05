@@ -13,8 +13,11 @@ const connectionsFileName = "connections.json"
 
 // DeviceConnections represents active tunnels
 type DeviceConnections struct {
+	// Targets holds the list of active remote access targets
 	Targets []client.RemoteAccessTarget
-	Cancel  func()
+
+	// Cancel is the function to cancel active connections
+	Cancel func()
 }
 
 // ConnectionStore handles active memory state and persistent disk storage
@@ -25,17 +28,21 @@ type ConnectionStore struct {
 	storage     fyne.Storage
 }
 
-func NewConnectionStore(s fyne.Storage) *ConnectionStore {
+// NewConnectionStore initializes a new ConnectionStore
+func NewConnectionStore(s fyne.Storage) (*ConnectionStore, error) {
 	store := &ConnectionStore{
 		activeItems: make(map[string]*DeviceConnections),
 		savedItems:  make(map[string][]client.RemoteAccessTarget),
 		storage:     s,
 	}
-	store.LoadFromDisk()
-	return store
+
+	if err := store.LoadFromDisk(); err != nil {
+		return nil, err
+	}
+	return store, nil
 }
 
-// Active Connection Logic
+// GetActive retrieves active connections from memory
 func (cs *ConnectionStore) GetActive(deviceID string) (*DeviceConnections, bool) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
@@ -43,19 +50,21 @@ func (cs *ConnectionStore) GetActive(deviceID string) (*DeviceConnections, bool)
 	return conn, exists
 }
 
+// SetActive sets active connections in memory
 func (cs *ConnectionStore) SetActive(deviceID string, conn *DeviceConnections) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 	cs.activeItems[deviceID] = conn
 }
 
+// DeleteActive removes active connections from memory
 func (cs *ConnectionStore) DeleteActive(deviceID string) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 	delete(cs.activeItems, deviceID)
 }
 
-// Persistence Logic
+// GetSaved retrieves saved connections from disk
 func (cs *ConnectionStore) GetSaved(deviceID string) ([]client.RemoteAccessTarget, bool) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
@@ -63,30 +72,43 @@ func (cs *ConnectionStore) GetSaved(deviceID string) ([]client.RemoteAccessTarge
 	return t, ok
 }
 
+// SaveToDisk saves connections to disk
 func (cs *ConnectionStore) SaveToDisk(nodeID string, targets []client.RemoteAccessTarget) error {
 	cs.mutex.Lock()
 	cs.savedItems[nodeID] = targets
 	cs.mutex.Unlock() // Unlock before IO
 
-	w, err := cs.storage.Save(connectionsFileName)
+	var w fyne.URIWriteCloser
+	var err error
+
+	w, err = cs.storage.Save(connectionsFileName)
 	if err != nil {
 		return err
 	}
-	defer w.Close()
-	return json.NewEncoder(w).Encode(cs.savedItems)
+	defer func() { err = w.Close() }()
+
+	err = json.NewEncoder(w).Encode(cs.savedItems)
+	return err
 }
 
+// LoadFromDisk loads connections from disk
 func (cs *ConnectionStore) LoadFromDisk() error {
+	var err error
+	var r fyne.URIReadCloser
+
 	list := cs.storage.List()
+
+	// if no saved connections, skip loading
 	if !slices.Contains(list, connectionsFileName) {
 		return nil
 	}
 
-	r, err := cs.storage.Open(connectionsFileName)
+	r, err = cs.storage.Open(connectionsFileName)
 	if err != nil {
 		return err
 	}
-	defer r.Close()
+	defer func() { err = r.Close() }()
 
-	return json.NewDecoder(r).Decode(&cs.savedItems)
+	err = json.NewDecoder(r).Decode(&cs.savedItems)
+	return err
 }
