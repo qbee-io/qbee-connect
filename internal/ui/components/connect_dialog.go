@@ -2,6 +2,7 @@ package components
 
 import (
 	"context"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -11,7 +12,8 @@ import (
 	"go.qbee.io/connect/internal/service"
 )
 
-type ConnectDelegate interface {
+// connectDelegate defines the methods required by the connect dialog
+type connectDelegate interface {
 	GetClient() *client.Client
 	GetContext() context.Context
 	GetStore() *service.ConnectionStore
@@ -20,7 +22,8 @@ type ConnectDelegate interface {
 	DisplayError(title, msg string)
 }
 
-func NewConnectDialog(d ConnectDelegate, device *client.InventoryListItem) *widget.PopUp {
+// NewConnectDialog creates a new connection configuration dialog
+func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widget.PopUp {
 	targetsContainer := container.NewVBox()
 	formContent := container.NewVBox()
 
@@ -46,7 +49,7 @@ func NewConnectDialog(d ConnectDelegate, device *client.InventoryListItem) *widg
 
 	// Declare dialog variable first so we can close it inside the callback
 	var dialog *widget.PopUp
-	
+
 	connectBtn := widget.NewButton("Save & Connect", func() {
 		var targets []client.RemoteAccessTarget
 		for _, obj := range targetsContainer.Objects {
@@ -75,36 +78,46 @@ func NewConnectDialog(d ConnectDelegate, device *client.InventoryListItem) *widg
 			}
 		}()
 
-		d.GetStore().SaveToDisk(device.NodeID, targets)
+		err := d.GetStore().SaveToDisk(device.NodeID, targets)
+		if err != nil {
+			d.DisplayError("Save Error", err.Error())
+		}
 		d.RefreshUI()
 		dialog.Hide()
 	})
 
 	footer := container.NewHBox(
-		layout.NewSpacer(), 
-		connectBtn, 
+		layout.NewSpacer(),
+		connectBtn,
 		widget.NewButton("Cancel", func() { dialog.Hide() }),
 	)
 
 	dialogContent := container.NewBorder(
-		content, 
-		footer, 
-		nil, nil, 
+		content,
+		footer,
+		nil, nil,
 		widget.NewCard("", "", container.NewWithoutLayout()),
 	)
-	
+
 	dialog = widget.NewModalPopUp(dialogContent, d.GetWindow().Canvas())
 	dialog.Resize(fyne.NewSize(800, 500))
 	return dialog
 }
 
 func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.RemoteAccessTarget) {
-	lp := widget.NewEntry(); lp.SetPlaceHolder("Local Port")
-	la := widget.NewEntry(); la.SetPlaceHolder("Local Addr"); la.SetText("127.0.0.1")
-	rp := widget.NewEntry(); rp.SetPlaceHolder("Remote Port")
-	ra := widget.NewEntry(); ra.SetPlaceHolder("Remote Addr"); ra.SetText("127.0.0.1")
-	proto := widget.NewSelect([]string{"tcp", "udp"}, nil); proto.SetSelected("tcp")
-	
+	lp := widget.NewEntry()
+	lp.SetPlaceHolder("Local Port")
+	la := widget.NewEntry()
+	la.SetPlaceHolder("Local Addr")
+	la.SetText("127.0.0.1")
+	rp := widget.NewEntry()
+	rp.SetPlaceHolder("Remote Port")
+	ra := widget.NewEntry()
+	ra.SetPlaceHolder("Remote Addr")
+	ra.SetText("127.0.0.1")
+	proto := widget.NewSelect([]string{"tcp", "udp"}, nil)
+	proto.SetSelected("tcp")
+
 	if prefill != nil {
 		lp.SetText(prefill.LocalPort)
 		la.SetText(prefill.LocalHost)
@@ -115,7 +128,7 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 
 	rmBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
 	row := container.NewGridWithColumns(6, lp, la, rp, ra, proto, rmBtn)
-	
+
 	rmBtn.OnTapped = func() {
 		c.Remove(row)
 		form.Refresh()

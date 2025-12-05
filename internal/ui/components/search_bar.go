@@ -14,7 +14,8 @@ import (
 	xwidget "fyne.io/x/fyne/widget"
 )
 
-type SearchBarDelegate interface {
+// searchBarDelegate defines the methods required by the search bar
+type searchBarDelegate interface {
 	RefreshUI()
 	SetSearchQuery(query client.InventoryListSearch)
 	GetAllTags() []string
@@ -27,7 +28,8 @@ const (
 	searchTag        = "Tag"
 )
 
-func NewSearchBar(d SearchBarDelegate) *fyne.Container {
+// NewSearchBar creates a new search bar container
+func NewSearchBar(d searchBarDelegate) *fyne.Container {
 
 	// Create Search Logic (Inline for simplicity or move to components/search.go)
 	searchEntry := container.NewVBox()
@@ -59,7 +61,7 @@ func NewSearchBar(d SearchBarDelegate) *fyne.Container {
 	return container.NewBorder(nil, nil, nil, container.NewHBox(searchSelect, refreshBtn), searchEntry)
 }
 
-func newDeviceSearchEntry(d SearchBarDelegate) *widget.Entry {
+func newDeviceSearchEntry(d searchBarDelegate) *widget.Entry {
 	entry := widget.NewEntry()
 	entry.SetPlaceHolder("Search by device name...")
 	entry.OnSubmitted = func(val string) {
@@ -68,7 +70,7 @@ func newDeviceSearchEntry(d SearchBarDelegate) *widget.Entry {
 	return entry
 }
 
-func newTagsSearchComplete(d SearchBarDelegate) *xwidget.CompletionEntry {
+func newTagsSearchComplete(d searchBarDelegate) *xwidget.CompletionEntry {
 
 	allTags := d.GetAllTags()
 
@@ -121,8 +123,7 @@ func newTagsSearchComplete(d SearchBarDelegate) *xwidget.CompletionEntry {
 	return tagSearch
 }
 
-// Group Search Logic
-func newGroupSearchComplete(d SearchBarDelegate) *xwidget.CompletionEntry {
+func newGroupSearchComplete(d searchBarDelegate) *xwidget.CompletionEntry {
 
 	groups := d.GetAllGroups()
 	groupMap := getGroupsBreadcrumb(*groups)
@@ -177,7 +178,6 @@ func newGroupSearchComplete(d SearchBarDelegate) *xwidget.CompletionEntry {
 	return groupSearch
 }
 
-// getGroupsBreadcrumb creates a map of "Group1 > SubgroupA > SubgroupB" to NodeID
 func getGroupsBreadcrumb(groups client.GroupTree) map[string]string {
 
 	result := make(map[string]string)
