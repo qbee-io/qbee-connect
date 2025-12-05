@@ -125,6 +125,7 @@ jobs:
         run: |
           goreleaser release --split
           GOOS=windows goreleaser release --split
+
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
@@ -167,9 +168,6 @@ jobs:
           KEY_PATH=$RUNNER_TEMP/goreleaser.p8
           echo -n "$MACOS_NOTARY_KEY" | base64 --decode -o $KEY_PATH
 
-          file $KEY_PATH
-          file /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
-
           xcrun notarytool store-credentials "$MACOS_NOTARY_PROFILE_NAME" \
             --key "$KEY_PATH" \
             --key-id "$MACOS_NOTARY_KEY_ID" \
@@ -195,8 +193,9 @@ jobs:
           goreleaser release --split
 
           # remove symlinks from dist directory to avoid upload issues
-          # with circular references in GitHub Actions
+          # in Github Actions with circular references
           find dist/darwin -type l -exec rm {} +
+
       # - name: Add icon to installer
       #   run: |
       #     export VOLIME_NAME="qbee-connect_amd64"
