@@ -2,7 +2,7 @@ package ui
 
 import (
 	"context"
-	_ "embed"
+	_ "embed" // for tray icon embedding
 	"fmt"
 	"image/color"
 	"log"
@@ -32,6 +32,7 @@ const (
 	defaultWindowHeight = 600
 )
 
+// App represents the main application structure
 type App struct {
 	// fyneApp is the main Fyne application instance
 	fyneApp fyne.App
