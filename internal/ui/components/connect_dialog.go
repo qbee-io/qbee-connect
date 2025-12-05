@@ -12,8 +12,8 @@ import (
 	"go.qbee.io/connect/internal/service"
 )
 
-// ConnectDelegate defines the methods required by the connect dialog
-type ConnectDelegate interface {
+// connectDelegate defines the methods required by the connect dialog
+type connectDelegate interface {
 	GetClient() *client.Client
 	GetContext() context.Context
 	GetStore() *service.ConnectionStore
@@ -23,7 +23,7 @@ type ConnectDelegate interface {
 }
 
 // NewConnectDialog creates a new connection configuration dialog
-func NewConnectDialog(d ConnectDelegate, device *client.InventoryListItem) *widget.PopUp {
+func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widget.PopUp {
 	targetsContainer := container.NewVBox()
 	formContent := container.NewVBox()
 

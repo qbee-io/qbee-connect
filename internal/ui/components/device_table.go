@@ -12,15 +12,16 @@ import (
 	"go.qbee.io/connect/internal/service"
 )
 
-// TableDelegate defines the methods required by the device table
-type TableDelegate interface {
+// tableDelegate defines the methods required by the device table
+type tableDelegate interface {
 	RefreshUI()
 	GetDeviceModel() *model.DeviceModel
 	GetStore() *service.ConnectionStore
 	ShowConnectDialog(item *client.InventoryListItem)
 }
 
-func NewDeviceTable(d TableDelegate) *widget.Table {
+// NewDeviceTable creates a new device table widget
+func NewDeviceTable(d tableDelegate) *widget.Table {
 	table := widget.NewTable(
 		func() (int, int) {
 			return len(d.GetDeviceModel().FilteredData.Items), len(model.DeviceColumns)
@@ -44,7 +45,7 @@ func NewDeviceTable(d TableDelegate) *widget.Table {
 	return table
 }
 
-func updateCell(d TableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
+func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	cell := obj.(*fyne.Container)
 	btn := cell.Objects[0].(*widget.Button)
 	lbl := cell.Objects[1].(*widget.Label)
@@ -93,7 +94,7 @@ func updateCell(d TableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	btn.Show()
 }
 
-func updateHeader(d TableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
+func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	if id.Col >= len(model.DeviceColumns) {
 		return
 	}
