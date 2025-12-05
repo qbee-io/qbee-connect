@@ -18,7 +18,8 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: stable
-
+      - name: Dependency Vulnerability Check
+        run: sudo apt install -y libgl1-mesa-dev xorg-dev
       - id: govulncheck
         uses: golang/govulncheck-action@v1
         with:
