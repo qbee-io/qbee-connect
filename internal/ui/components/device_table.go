@@ -1,6 +1,7 @@
 package components
 
 import (
+	"fmt"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -27,7 +28,9 @@ func NewDeviceTable(d tableDelegate) *widget.Table {
 			return len(d.GetDeviceModel().FilteredData.Items), len(model.DeviceColumns)
 		},
 		func() fyne.CanvasObject {
-			return container.NewStack(widget.NewButton("", nil), widget.NewLabel(""))
+			label := widget.NewLabel("")
+			label.Truncation = fyne.TextTruncateEllipsis
+			return container.NewStack(widget.NewButton("", nil), label)
 		},
 		func(id widget.TableCellID, obj fyne.CanvasObject) {
 			updateCell(d, id, obj)
@@ -73,6 +76,8 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 			}
 		case 3:
 			lbl.SetText(strings.Join(item.Tags, ", "))
+		case 4: // Connection Info Column
+			lbl.SetText(updateConnectionStatus(d, item))
 		}
 		return
 	}
@@ -81,14 +86,14 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	lbl.Hide()
 	conn, ok := d.GetStore().GetActive(item.NodeID)
 	if ok {
-		btn.SetText("Disconnect")
+		btn.SetIcon(theme.CancelIcon())
 		btn.OnTapped = func() {
 			conn.Cancel()
 			d.GetStore().DeleteActive(item.NodeID)
 			d.RefreshUI()
 		}
 	} else {
-		btn.SetText("Configure")
+		btn.SetIcon(theme.SettingsIcon())
 		btn.OnTapped = func() { d.ShowConnectDialog(&item) }
 	}
 	btn.Show()
@@ -133,4 +138,24 @@ func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject)
 			d.RefreshUI()
 		}
 	}
+}
+
+// updateConnectionStatus returns the formatted connection information for a device
+func updateConnectionStatus(d tableDelegate, item client.InventoryListItem) string {
+	var activeConn *service.DeviceConnections
+	var ok bool
+
+	if activeConn, ok = d.GetStore().GetActive(item.NodeID); !ok {
+		return "-"
+	}
+	targetStrings := []string{}
+
+	for _, target := range activeConn.Targets {
+		targetStrings = append(
+			targetStrings,
+			fmt.Sprintf("%s: %s:%s -> %s:%s", target.Protocol, target.LocalHost, target.LocalPort, target.RemoteHost, target.RemotePort),
+		)
+	}
+
+	return fmt.Sprintf("%d [%s]", len(activeConn.Targets), strings.Join(targetStrings, ", "))
 }
