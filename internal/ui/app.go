@@ -191,8 +191,8 @@ func (app *App) Run() {
 
 	app.mainWindowVisible = true
 
-	// Initial data load, run in separate goroutine to avoid blocking UI
-	go app.RefreshUI()
+	// Initial data load
+	app.RefreshUI()
 
 	app.fyneApp.Run()
 }
