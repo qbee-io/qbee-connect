@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"log"
 	"net/http"
+	"sync/atomic"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -62,7 +63,7 @@ type App struct {
 	loadingOverlay *fyne.Container
 
 	// mainWindowVisible indicates if the main window is currently visible
-	mainWindowVisible bool
+	mainWindowVisible atomic.Bool
 }
 
 // NewApp initializes the main application structure
@@ -189,7 +190,7 @@ func (app *App) Run() {
 	app.mainWin.CenterOnScreen()
 	app.mainWin.Show()
 
-	app.mainWindowVisible = true
+	app.mainWindowVisible.Store(true)
 
 	// Initial data load
 	app.RefreshUI()
@@ -199,7 +200,7 @@ func (app *App) Run() {
 
 // RefreshUI fetches device data and refreshes the UI
 func (app *App) RefreshUI() {
-	if !app.mainWindowVisible {
+	if !app.mainWindowVisible.Load() {
 		return
 	}
 	app.loadingOverlay.Show()
