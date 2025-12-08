@@ -78,9 +78,10 @@ type DeviceColumn struct {
 
 // DeviceColumns defines the columns for the device table
 var DeviceColumns = []DeviceColumn{
-	{Title: "Device", Sortable: true, SortKey: "title", WidthQuotient: 0.22},
+	{Title: "Device", Sortable: true, SortKey: "title", WidthQuotient: 0.19},
 	{Title: "Status", Sortable: true, SortKey: "exp_hard", WidthQuotient: 0.13},
-	{Title: "Group", WidthQuotient: 0.32},
-	{Title: "Tags", WidthQuotient: 0.22},
-	{Title: "", WidthQuotient: 0.11}, // Actions column
+	{Title: "Group", WidthQuotient: 0.25},
+	{Title: "Tags", WidthQuotient: 0.15},
+	{Title: "Connection info", WidthQuotient: 0.22}, // Spacer column
+	{Title: "", WidthQuotient: 0.06},                // Actions column
 }
