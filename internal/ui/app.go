@@ -132,13 +132,6 @@ func (app *App) Run() {
 	menu := components.MakeMenu()
 	app.mainWin.SetMainMenu(menu)
 
-	// Initial Load
-	if err := app.LoadDeviceData(); err != nil {
-		app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
-	}
-
-	app.RedrawDeviceList()
-
 	filterActive := widget.NewCheck("Open tunnels on page", func(checked bool) {
 		app.deviceModel.ActiveTunnelsOnly = checked
 		app.RedrawDeviceList()
@@ -197,6 +190,10 @@ func (app *App) Run() {
 	app.mainWin.Show()
 
 	app.mainWindowVisible = true
+
+	// Initial data load, run in separate goroutine to avoid blocking UI
+	go app.RefreshUI()
+
 	app.fyneApp.Run()
 }
 
