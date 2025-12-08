@@ -185,7 +185,10 @@ func (app *App) Run() {
 	app.loadingOverlay.Hide()
 
 	app.mainWin.SetContent(container.NewStack(content, app.loadingOverlay))
-	app.mainWin.SetCloseIntercept(func() { app.mainWin.Hide() })
+	app.mainWin.SetCloseIntercept(func() {
+		app.mainWindowVisible.Store(false)
+		app.mainWin.Hide()
+	})
 	app.mainWin.Resize(fyne.NewSize(defaultWindowWidth, defaultWindowHeight))
 	app.mainWin.CenterOnScreen()
 	app.mainWin.Show()
@@ -249,7 +252,10 @@ func (app *App) RedrawDeviceList() {
 func (app *App) MakeTray() {
 	if desk, ok := app.fyneApp.(desktop.App); ok && len(trayIcon) > 0 {
 		menu := fyne.NewMenu("qbee-connect",
-			fyne.NewMenuItem("Show", func() { app.mainWin.Show() }),
+			fyne.NewMenuItem("Show", func() {
+				app.mainWindowVisible.Store(true)
+				app.mainWin.Show()
+			}),
 			fyne.NewMenuItem("Quit", func() { app.fyneApp.Quit() }),
 		)
 		desk.SetSystemTrayIcon(fyne.NewStaticResource("icon", trayIcon))
