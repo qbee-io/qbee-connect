@@ -82,6 +82,6 @@ var DeviceColumns = []DeviceColumn{
 	{Title: "Status", Sortable: true, SortKey: "exp_hard", WidthQuotient: 0.13},
 	{Title: "Group", WidthQuotient: 0.25},
 	{Title: "Tags", WidthQuotient: 0.15},
-	{Title: "Connection info", WidthQuotient: 0.22}, // Spacer column
-	{Title: "", WidthQuotient: 0.06},                // Actions column
+	{Title: "Connection Info", WidthQuotient: 0.22},
+	{Title: "", WidthQuotient: 0.06}, // Actions column
 }
