@@ -140,7 +140,7 @@ func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject)
 	}
 }
 
-// updateConnectionStatus updates the device name cell with truncation
+// updateConnectionStatus returns the formatted connection information for a device
 func updateConnectionStatus(d tableDelegate, item client.InventoryListItem) string {
 	var activeConn *service.DeviceConnections
 	var ok bool
