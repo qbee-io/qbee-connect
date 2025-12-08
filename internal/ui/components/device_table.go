@@ -151,12 +151,10 @@ func updateConnectionStatus(d tableDelegate, item client.InventoryListItem) stri
 	targetStrings := []string{}
 
 	for _, target := range activeConn.Targets {
-
 		targetStrings = append(
 			targetStrings,
 			fmt.Sprintf("%s: %s:%s -> %s:%s", target.Protocol, target.LocalHost, target.LocalPort, target.RemoteHost, target.RemotePort),
 		)
-
 	}
 
 	return fmt.Sprintf("%d [%s]", len(activeConn.Targets), strings.Join(targetStrings, ", "))
