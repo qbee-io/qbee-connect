@@ -76,7 +76,7 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 			}
 		case 3:
 			lbl.SetText(strings.Join(item.Tags, ", "))
-		case 4: // Spacer Column
+		case 4: // Connection Info Column
 			lbl.SetText(updateConnectionStatus(d, item))
 		}
 		return
