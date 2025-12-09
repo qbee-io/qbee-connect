@@ -185,7 +185,7 @@ func (app *App) Run() {
 	app.loadingOverlay.Hide()
 
 	app.mainWin.SetContent(container.NewStack(content, app.loadingOverlay))
-	app.mainWin.SetCloseIntercept(func() { app.mainWin.Hide() })
+	app.mainWin.SetCloseIntercept(func() { app.mainWindowVisible.Store(false); app.mainWin.Hide() })
 	app.mainWin.Resize(fyne.NewSize(defaultWindowWidth, defaultWindowHeight))
 	app.mainWin.CenterOnScreen()
 
