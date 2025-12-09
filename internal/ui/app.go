@@ -130,7 +130,7 @@ func (app *App) Run() {
 	app.MakeTray()
 	app.deviceList = components.NewDeviceTable(app)
 
-	menu := components.MakeMenu()
+	menu := components.MakeMenu(app)
 	app.mainWin.SetMainMenu(menu)
 
 	filterActive := widget.NewCheck("Open tunnels on page", func(checked bool) {

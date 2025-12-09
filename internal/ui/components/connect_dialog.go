@@ -27,7 +27,7 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 	targetsContainer := container.NewVBox()
 	formContent := container.NewVBox()
 
-	saved, exists := d.GetStore().GetSaved(device.NodeID)
+	saved, exists := d.GetStore().GetDeviceSaved(device.NodeID)
 	if exists {
 		for _, t := range saved {
 			addConnectRow(targetsContainer, formContent, &t)
@@ -78,7 +78,7 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 			}
 		}()
 
-		err := d.GetStore().SaveToDisk(device.NodeID, targets)
+		err := d.GetStore().SaveOnConnect(device.NodeID, targets)
 		if err != nil {
 			d.DisplayError("Save Error", err.Error())
 		}

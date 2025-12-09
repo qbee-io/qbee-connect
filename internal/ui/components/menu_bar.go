@@ -9,10 +9,16 @@ import (
 	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"go.qbee.io/connect/internal/service"
 )
 
 // MakeMenu constructs the main application menu
-func MakeMenu() *fyne.MainMenu {
+
+type menuDelegate interface {
+	GetStore() *service.ConnectionStore
+}
+
+func MakeMenu(m menuDelegate) *fyne.MainMenu {
 
 	openSettings := func() {
 		w := fyne.CurrentApp().NewWindow("Settings")
@@ -30,9 +36,19 @@ func MakeMenu() *fyne.MainMenu {
 		w.CenterOnScreen()
 		w.Show()
 	}
+
+	showConnectionsEditor := func() {
+		w := fyne.CurrentApp().NewWindow("Connections Editor")
+		w.SetContent(NewConnectionsEditor(m, w))
+		w.Resize(fyne.NewSize(600, 400))
+		w.CenterOnScreen()
+		w.Show()
+	}
+
 	aboutItem := fyne.NewMenuItem("About", showAbout)
 	settingsItem := fyne.NewMenuItem("Settings", openSettings)
-	mainMenu := fyne.NewMenu("File", aboutItem, settingsItem)
+	connectionsEditorItem := fyne.NewMenuItem("Connections Editor", showConnectionsEditor)
+	mainMenu := fyne.NewMenu("File", aboutItem, settingsItem, connectionsEditorItem)
 	return fyne.NewMainMenu(mainMenu)
 }
 
