@@ -188,7 +188,6 @@ func (app *App) Run() {
 	app.mainWin.SetCloseIntercept(func() { app.mainWin.Hide() })
 	app.mainWin.Resize(fyne.NewSize(defaultWindowWidth, defaultWindowHeight))
 	app.mainWin.CenterOnScreen()
-	app.mainWin.Show()
 
 	// Initial data load
 	app.fyneApp.Lifecycle().SetOnStarted(func() {
@@ -196,7 +195,7 @@ func (app *App) Run() {
 		app.RefreshUI()
 	})
 
-	app.fyneApp.Run()
+	app.mainWin.ShowAndRun()
 }
 
 // RefreshUI fetches device data and refreshes the UI
