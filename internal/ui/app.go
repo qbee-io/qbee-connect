@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"log"
 	"net/http"
+	"sync/atomic"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -62,7 +63,7 @@ type App struct {
 	loadingOverlay *fyne.Container
 
 	// mainWindowVisible indicates if the main window is currently visible
-	mainWindowVisible bool
+	mainWindowVisible atomic.Bool
 }
 
 // NewApp initializes the main application structure
@@ -132,13 +133,6 @@ func (app *App) Run() {
 	menu := components.MakeMenu()
 	app.mainWin.SetMainMenu(menu)
 
-	// Initial Load
-	if err := app.LoadDeviceData(); err != nil {
-		app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
-	}
-
-	app.RedrawDeviceList()
-
 	filterActive := widget.NewCheck("Open tunnels on page", func(checked bool) {
 		app.deviceModel.ActiveTunnelsOnly = checked
 		app.RedrawDeviceList()
@@ -191,18 +185,23 @@ func (app *App) Run() {
 	app.loadingOverlay.Hide()
 
 	app.mainWin.SetContent(container.NewStack(content, app.loadingOverlay))
-	app.mainWin.SetCloseIntercept(func() { app.mainWin.Hide() })
+	app.mainWin.SetCloseIntercept(func() { app.mainWindowVisible.Store(false); app.mainWin.Hide() })
 	app.mainWin.Resize(fyne.NewSize(defaultWindowWidth, defaultWindowHeight))
 	app.mainWin.CenterOnScreen()
-	app.mainWin.Show()
 
-	app.mainWindowVisible = true
-	app.fyneApp.Run()
+	// Initial data load
+	app.fyneApp.Lifecycle().SetOnStarted(func() {
+		app.mainWindowVisible.Store(true)
+		app.RefreshUI()
+	})
+
+	app.mainWin.ShowAndRun()
 }
 
 // RefreshUI fetches device data and refreshes the UI
 func (app *App) RefreshUI() {
-	if !app.mainWindowVisible {
+	// If the main window is not visible, skip the refresh
+	if !app.mainWindowVisible.Load() {
 		return
 	}
 	app.loadingOverlay.Show()
