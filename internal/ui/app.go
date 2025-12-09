@@ -190,10 +190,11 @@ func (app *App) Run() {
 	app.mainWin.CenterOnScreen()
 	app.mainWin.Show()
 
-	app.mainWindowVisible.Store(true)
-
 	// Initial data load
-	app.RefreshUI()
+	app.fyneApp.Lifecycle().SetOnStarted(func() {
+		app.mainWindowVisible.Store(true)
+		app.RefreshUI()
+	})
 
 	app.fyneApp.Run()
 }
