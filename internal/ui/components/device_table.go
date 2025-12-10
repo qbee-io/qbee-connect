@@ -69,9 +69,7 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 
 	cell := obj.(*fyne.Container)
 	items := d.GetDeviceModel().FilteredData.Items
-
 	if id.Row >= len(items) {
-		fmt.Printf("Row index out of range: %d >= %d\n", id.Row, len(items))
 		cell.RemoveAll()
 		return
 	}
@@ -79,21 +77,19 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	item := items[id.Row]
 
 	// Data Columns
-	if id.Col < len(model.DeviceColumns) {
-		switch id.Col {
-		case 0:
-			updateTitleCell(cell, item)
-		case 1:
-			updateStatusCell(cell, item)
-		case 2:
-			updateGroupCell(cell, item)
-		case 3:
-			updateTagsCell(cell, item)
-		case 4: // Connection Info Column
-			updateConnectionStatusCell(d, cell, item)
-		case 5:
-			updateActionCell(d, cell, item)
-		}
+	switch id.Col {
+	case 0:
+		updateTitleCell(cell, item)
+	case 1:
+		updateStatusCell(cell, item)
+	case 2:
+		updateGroupCell(cell, item)
+	case 3:
+		updateTagsCell(cell, item)
+	case 4: // Connection Info Column
+		updateConnectionStatusCell(d, cell, item)
+	case 5:
+		updateActionCell(d, cell, item)
 	}
 }
 
