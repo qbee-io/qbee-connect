@@ -54,10 +54,6 @@ func NewDeviceTable(d tableDelegate) *widget.Table {
 		},
 	)
 
-	table.Length = func() (int, int) {
-		return len(d.GetDeviceModel().FilteredData.Items), len(model.DeviceColumns)
-	}
-
 	table.ShowHeaderRow = true
 	table.CreateHeader = func() fyne.CanvasObject { return widget.NewButton("", nil) }
 	table.UpdateHeader = func(id widget.TableCellID, obj fyne.CanvasObject) {
