@@ -62,6 +62,9 @@ type App struct {
 	// loadingOverlay is the overlay shown during loading operations
 	loadingOverlay *fyne.Container
 
+	// loadingProgressBar indicates loading progress
+	loadingProgressBar *widget.ProgressBarInfinite
+
 	// mainWindowVisible indicates if the main window is currently visible
 	mainWindowVisible atomic.Bool
 }
@@ -179,9 +182,12 @@ func (app *App) Run() {
 	)
 
 	// Loading Overlay
-	loader := widget.NewProgressBarInfinite()
+	app.loadingProgressBar = widget.NewProgressBarInfinite()
 	overlay := canvas.NewRectangle(color.NRGBA{0, 0, 0, 180})
-	app.loadingOverlay = container.NewStack(overlay, container.NewCenter(container.NewVBox(widget.NewLabel("Loading..."), loader)))
+	app.loadingOverlay = container.NewStack(overlay, container.NewCenter(container.NewVBox(widget.NewLabel("Loading..."), app.loadingProgressBar)))
+
+	// Initial hide of loading overlay, stop the progress bar to avoid CPU usage
+	app.loadingProgressBar.Stop()
 	app.loadingOverlay.Hide()
 
 	app.mainWin.SetContent(container.NewStack(content, app.loadingOverlay))
@@ -204,9 +210,21 @@ func (app *App) RefreshUI() {
 	if !app.mainWindowVisible.Load() {
 		return
 	}
+
+	for _, obj := range app.loadingOverlay.Objects {
+		obj.Show()
+
+	}
+	// Start the loading indicator
+	app.loadingProgressBar.Start()
 	app.loadingOverlay.Show()
 	go func() {
-		defer fyne.DoAndWait(func() { app.loadingOverlay.Hide() })
+		defer fyne.DoAndWait(func() {
+			app.loadingOverlay.Hide()
+
+			// Stop the loading indicator to avoid CPU usage
+			app.loadingProgressBar.Stop()
+		})
 
 		if err := app.LoadDeviceData(); err != nil {
 			app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
