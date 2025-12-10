@@ -211,17 +211,12 @@ func (app *App) RefreshUI() {
 		return
 	}
 
-	for _, obj := range app.loadingOverlay.Objects {
-		obj.Show()
-
-	}
 	// Start the loading indicator
 	app.loadingProgressBar.Start()
 	app.loadingOverlay.Show()
 	go func() {
 		defer fyne.DoAndWait(func() {
 			app.loadingOverlay.Hide()
-
 			// Stop the loading indicator to avoid CPU usage
 			app.loadingProgressBar.Stop()
 		})
