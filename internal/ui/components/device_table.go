@@ -93,6 +93,7 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	}
 }
 
+// updateTitleCell updates the title cell with the device's name
 func updateTitleCell(cell *fyne.Container, item client.InventoryListItem) {
 	updateLabelCell(cell, item.Title)
 }
