@@ -244,11 +244,8 @@ func (app *App) RedrawDeviceList() {
 		app.pageInfoLabel.SetText(fmt.Sprintf("Page %d / %d", app.deviceModel.CurrentPage+1, app.deviceModel.TotalPages()))
 	})
 
-	fyne.DoAndWait(func() {
-		app.deviceList.ScrollToTop()
-	})
-
 	fyne.Do(func() {
+		app.deviceList.ScrollToTop()
 		app.deviceList.Refresh()
 	})
 }
