@@ -61,13 +61,13 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	if id.Col < len(model.DeviceColumns) {
 		switch id.Col {
 		case 0:
-			updateTitleCell(d, cell, item)
+			updateTitleCell(cell, item)
 		case 1:
-			updateStatusCell(d, cell, item)
+			updateStatusCell(cell, item)
 		case 2:
-			updateGroupCell(d, cell, item)
+			updateGroupCell(cell, item)
 		case 3:
-			updateTagsCell(d, cell, item)
+			updateTagsCell(cell, item)
 		case 4: // Connection Info Column
 			updateConnectionStatusCell(d, cell, item)
 		case 5:
@@ -76,14 +76,15 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	}
 }
 
-func updateTitleCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
+func updateTitleCell(cell *fyne.Container, item client.InventoryListItem) {
 	cell.RemoveAll()
 	title := widget.NewLabel(item.Title)
 	title.Truncation = fyne.TextTruncateEllipsis
 	cell.Add(title)
 }
 
-func updateStatusCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
+// updateStatusCell updates the status cell with the device's online/offline status
+func updateStatusCell(cell *fyne.Container, item client.InventoryListItem) {
 	cell.RemoveAll()
 	var statusIcon fyne.Resource
 	var colorName fyne.ThemeColorName
@@ -102,7 +103,8 @@ func updateStatusCell(d tableDelegate, cell *fyne.Container, item client.Invento
 	cell.Add(status)
 }
 
-func updateTagsCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
+// updateTagsCell updates the tags cell with the device's tags
+func updateTagsCell(cell *fyne.Container, item client.InventoryListItem) {
 	cell.RemoveAll()
 	tags := "-"
 
@@ -114,7 +116,8 @@ func updateTagsCell(d tableDelegate, cell *fyne.Container, item client.Inventory
 	cell.Add(tagLabel)
 }
 
-func updateGroupCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
+// updateGroupCell updates the group cell with the device's group hierarchy
+func updateGroupCell(cell *fyne.Container, item client.InventoryListItem) {
 	cell.RemoveAll()
 	text := ""
 	if len(item.AncestorsTitles) > 0 {
@@ -125,6 +128,7 @@ func updateGroupCell(d tableDelegate, cell *fyne.Container, item client.Inventor
 	cell.Add(group)
 }
 
+// updateConnectionStatusCell updates the connection status cell with current connection info
 func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
 	cell.RemoveAll()
 	text := updateConnectionStatus(d, item)
@@ -133,6 +137,7 @@ func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item clie
 	cell.Add(status)
 }
 
+// updateActionCell updates the action cell with the appropriate button based on connection status
 func updateActionCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
 	cell.RemoveAll()
 	btn := widget.NewButton("", nil)
@@ -152,6 +157,7 @@ func updateActionCell(d tableDelegate, cell *fyne.Container, item client.Invento
 	cell.Add(btn)
 }
 
+// updateHeader updates the header cell with the column title and sorting functionality
 func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	if id.Col < 0 {
 		return
