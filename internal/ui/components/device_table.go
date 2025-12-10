@@ -21,6 +21,24 @@ type tableDelegate interface {
 	ShowConnectDialog(item *client.InventoryListItem)
 }
 
+const (
+	StatusOnline       = "online"
+	StatusDelayed      = "delayed"
+	StatusDisconnected = "disconnected"
+)
+
+var statusColors = map[string]fyne.ThemeColorName{
+	StatusOnline:       theme.ColorNameSuccess,
+	StatusDelayed:      theme.ColorNameWarning,
+	StatusDisconnected: theme.ColorNameError,
+}
+
+var statusIcons = map[string]fyne.ThemeIconName{
+	StatusOnline:       theme.IconNameConfirm,
+	StatusDelayed:      theme.IconNameWarning,
+	StatusDisconnected: theme.IconNameCancel,
+}
+
 // NewDeviceTable creates a new device table widget
 func NewDeviceTable(d tableDelegate) *widget.Table {
 	table := widget.NewTable(
@@ -28,14 +46,17 @@ func NewDeviceTable(d tableDelegate) *widget.Table {
 			return len(d.GetDeviceModel().FilteredData.Items), len(model.DeviceColumns)
 		},
 		func() fyne.CanvasObject {
-			label := widget.NewLabel("")
-			label.Truncation = fyne.TextTruncateEllipsis
-			return container.NewStack(widget.NewButton("", nil), label)
+			return container.NewStack()
 		},
 		func(id widget.TableCellID, obj fyne.CanvasObject) {
+
 			updateCell(d, id, obj)
 		},
 	)
+
+	table.Length = func() (int, int) {
+		return len(d.GetDeviceModel().FilteredData.Items), len(model.DeviceColumns)
+	}
 
 	table.ShowHeaderRow = true
 	table.CreateHeader = func() fyne.CanvasObject { return widget.NewButton("", nil) }
@@ -49,12 +70,16 @@ func NewDeviceTable(d tableDelegate) *widget.Table {
 }
 
 func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
-	cell := obj.(*fyne.Container)
 
+	cell := obj.(*fyne.Container)
 	items := d.GetDeviceModel().FilteredData.Items
+
 	if id.Row >= len(items) {
+		fmt.Printf("Row index out of range: %d >= %d\n", id.Row, len(items))
+		cell.RemoveAll()
 		return
 	}
+
 	item := items[id.Row]
 
 	// Data Columns
@@ -77,83 +102,76 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 }
 
 func updateTitleCell(cell *fyne.Container, item client.InventoryListItem) {
-	cell.RemoveAll()
-	title := widget.NewLabel(item.Title)
-	title.Truncation = fyne.TextTruncateEllipsis
-	cell.Add(title)
+	updateLabelCell(cell, item.Title)
 }
 
 // updateStatusCell updates the status cell with the device's online/offline status
 func updateStatusCell(cell *fyne.Container, item client.InventoryListItem) {
-	cell.RemoveAll()
-	var statusIcon fyne.Resource
-	var colorName fyne.ThemeColorName
-
-	if item.Status == "online" {
-		statusIcon = theme.ConfirmIcon()
-		colorName = theme.ColorNameSuccess
-	} else {
-		statusIcon = theme.CancelIcon()
-		colorName = theme.ColorNameError
+	iconName, ok := statusIcons[item.Status]
+	if !ok {
+		iconName = theme.IconNameQuestion
 	}
-	themeResource := theme.NewThemedResource(statusIcon)
-	themeResource.ColorName = colorName
-	status := widget.NewIcon(themeResource)
 
-	cell.Add(status)
+	colorName, ok := statusColors[item.Status]
+	if !ok {
+		colorName = theme.ColorNameDisabled
+	}
+	icon := theme.NewThemedResource(theme.Icon(iconName))
+	icon.ColorName = colorName
+
+	cell.RemoveAll()
+	cell.Add(widget.NewIcon(icon))
 }
 
 // updateTagsCell updates the tags cell with the device's tags
 func updateTagsCell(cell *fyne.Container, item client.InventoryListItem) {
-	cell.RemoveAll()
 	tags := "-"
-
 	if len(item.Tags) > 0 {
 		tags = strings.Join(item.Tags, ", ")
 	}
-	tagLabel := widget.NewLabel(tags)
-	tagLabel.Truncation = fyne.TextTruncateEllipsis
-	cell.Add(tagLabel)
+	updateLabelCell(cell, tags)
 }
 
 // updateGroupCell updates the group cell with the device's group hierarchy
 func updateGroupCell(cell *fyne.Container, item client.InventoryListItem) {
-	cell.RemoveAll()
 	text := ""
 	if len(item.AncestorsTitles) > 0 {
 		text = strings.Join(item.AncestorsTitles[:len(item.AncestorsTitles)-1], " > ")
 	}
-	group := widget.NewLabel(text)
-	group.Truncation = fyne.TextTruncateEllipsis
-	cell.Add(group)
+	updateLabelCell(cell, text)
 }
 
 // updateConnectionStatusCell updates the connection status cell with current connection info
 func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
-	cell.RemoveAll()
 	text := updateConnectionStatus(d, item)
-	status := widget.NewLabel(text)
-	status.Truncation = fyne.TextTruncateEllipsis
-	cell.Add(status)
+	updateLabelCell(cell, text)
+}
+
+// updateLabelCell updates a cell with a simple text label
+func updateLabelCell(cell *fyne.Container, text string) {
+	cell.RemoveAll()
+	label := widget.NewLabel(text)
+	label.Truncation = fyne.TextTruncateEllipsis
+	cell.Add(label)
 }
 
 // updateActionCell updates the action cell with the appropriate button based on connection status
 func updateActionCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
-	cell.RemoveAll()
-	btn := widget.NewButton("", nil)
 	conn, ok := d.GetStore().GetActive(item.NodeID)
+
+	icon := theme.SettingsIcon()
+	tapped := func() { d.ShowConnectDialog(&item) }
 	if ok {
-		btn.SetIcon(theme.CancelIcon())
-		btn.OnTapped = func() {
+		icon = theme.CancelIcon()
+		tapped = func() {
 			conn.Cancel()
 			d.GetStore().DeleteActive(item.NodeID)
 			d.RefreshUI()
 		}
-	} else {
-		btn.SetIcon(theme.SettingsIcon())
-		btn.OnTapped = func() { d.ShowConnectDialog(&item) }
 	}
 
+	cell.RemoveAll()
+	btn := widget.NewButtonWithIcon("", icon, tapped)
 	cell.Add(btn)
 }
 
