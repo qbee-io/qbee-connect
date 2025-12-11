@@ -65,7 +65,11 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 		}
 
 		ctx, cancel := context.WithCancel(d.GetContext())
-		d.GetStore().SetActive(device.NodeID, &service.DeviceConnections{Targets: targets, Cancel: cancel})
+		d.GetStore().SetActive(device.NodeID, &service.DeviceConnections{
+			Title:   device.Title,
+			Targets: targets,
+			Cancel:  cancel,
+		})
 
 		go func() {
 			defer func() {

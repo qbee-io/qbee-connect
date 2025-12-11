@@ -50,6 +50,12 @@ type App struct {
 	// store is the connection store
 	store *service.ConnectionStore
 
+	// tabs & active connections
+	activeTabs  *container.AppTabs
+	activeView  fyne.CanvasObject
+	activeTab   *container.TabItem
+	unsubscribe func()
+
 	// deviceModel represents the device data model
 	deviceModel *model.DeviceModel
 
@@ -190,7 +196,42 @@ func (app *App) Run() {
 	app.loadingProgressBar.Stop()
 	app.loadingOverlay.Hide()
 
-	app.mainWin.SetContent(container.NewStack(content, app.loadingOverlay))
+	// Build tabs: Devices + Active (count)
+	app.activeView = components.NewActiveConnections(app)
+	app.activeTab = container.NewTabItem("Active (0)", container.NewVScroll(app.activeView))
+	devicesTab := container.NewTabItem("Devices", content)
+	app.activeTabs = container.NewAppTabs(devicesTab, app.activeTab)
+	app.activeTabs.SetTabLocation(container.TabLocationTop)
+
+	// subscribe to store updates to refresh both tabs and update count
+	if app.unsubscribe != nil {
+		app.unsubscribe()
+	}
+	app.unsubscribe = app.store.Subscribe(func() {
+		fyne.Do(func() {
+			// refresh active view
+			/*if v, ok := activeView.(*components.ActiveConnectionsView); ok {
+				v.Refresh()
+			}*/
+			components.RefreshActiveConnections(app, app.activeView)
+
+			// update count in tab title
+			count := len(app.store.SnapshotActive())
+			app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
+			app.activeTabs.Refresh()
+			// keep device table up-to-date too
+			app.deviceList.Refresh()
+		})
+	})
+
+	// Initial title update
+	{
+		count := len(app.store.SnapshotActive())
+		app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
+	}
+
+	app.mainWin.SetContent(container.NewStack(app.activeTabs, app.loadingOverlay))
+
 	app.mainWin.SetCloseIntercept(func() { app.mainWindowVisible.Store(false); app.mainWin.Hide() })
 	app.mainWin.Resize(fyne.NewSize(defaultWindowWidth, defaultWindowHeight))
 	app.mainWin.CenterOnScreen()
