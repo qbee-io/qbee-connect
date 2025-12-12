@@ -157,9 +157,7 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 	if prefill != nil {
 		lp.SetText(prefill.LocalPort)
 		la.SetText(prefill.LocalHost)
-
 		ra.SetText(prefill.RemoteHost)
-		proto.SetSelected(prefill.Protocol)
 		// set port selector based on prefill
 		found := false
 		for name, port := range servicePortMap {
