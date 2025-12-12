@@ -20,11 +20,11 @@ type activeConnectionsDelegate interface {
 func NewActiveConnections(a activeConnectionsDelegate) *fyne.Container {
 	root := container.NewVBox()
 
-	RefreshActiveConnections(a, root)
+	UpdateActiveConnectionsView(a, root)
 	return root
 }
 
-func RefreshActiveConnections(a activeConnectionsDelegate, activeView fyne.CanvasObject) {
+func UpdateActiveConnectionsView(a activeConnectionsDelegate, activeView fyne.CanvasObject) {
 
 	root, ok := activeView.(*fyne.Container)
 	if !ok {
