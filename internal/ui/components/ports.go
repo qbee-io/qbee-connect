@@ -6,27 +6,33 @@ const (
 )
 
 const (
-	servicePortSSH    = "22"
-	servicePortHTTP   = "80"
-	servicePortHTTPS  = "443"
-	servicePortRDP    = "3389"
-	servicePortVNC    = "5900"
-	servicePortCustom = "custom"
+	serviceSSHPort   = "22"
+	serviceHTTPPort  = "80"
+	serviceHTTPSPort = "443"
+	serviceRDPPort   = "3389"
+	serviceVNCPort   = "5900"
+
+	serviceSSHName    = "SSH"
+	serviceHTTPName   = "HTTP"
+	serviceHTTPSName  = "HTTPS"
+	serviceRDPName    = "RDP"
+	serviceVNCName    = "VNC"
+	serviceCustomName = "custom"
 )
 
 var servicePortNames = []string{
-	"SSH",
-	"HTTP",
-	"HTTPS",
-	"RDP",
-	"VNC",
-	"custom",
+	serviceSSHName,
+	serviceHTTPName,
+	serviceHTTPSName,
+	serviceRDPName,
+	serviceVNCName,
+	serviceCustomName,
 }
 
 var servicePortMap = map[string]string{
-	"SSH":   servicePortSSH,
-	"HTTP":  servicePortHTTP,
-	"HTTPS": servicePortHTTPS,
-	"RDP":   servicePortRDP,
-	"VNC":   servicePortVNC,
+	serviceSSHName:   serviceSSHPort,
+	serviceHTTPName:  serviceHTTPPort,
+	serviceHTTPSName: serviceHTTPSPort,
+	serviceRDPName:   serviceRDPPort,
+	serviceVNCName:   serviceVNCPort,
 }

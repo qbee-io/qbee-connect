@@ -142,7 +142,7 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 
 	portSelector := widget.NewSelect(servicePortNames,
 		func(s string) {
-			if s != servicePortCustom {
+			if s != serviceCustomName {
 				proto.SetSelected("tcp")
 				rp.SetText(servicePortMap[s])
 				rp.Disable()
@@ -170,7 +170,7 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 			}
 		}
 		if !found {
-			portSelector.SetSelected(servicePortCustom)
+			portSelector.SetSelected(serviceCustomName)
 			rp.SetText(prefill.RemotePort)
 		}
 	} else {
