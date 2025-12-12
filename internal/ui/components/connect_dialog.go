@@ -162,14 +162,22 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 		found := false
 		for name, port := range servicePortMap {
 			if port == prefill.RemotePort {
-				portSelector.SetSelected(name)
-				found = true
+				// Only select the predefined port if the protocol matches the default ("tcp")
+				if prefill.Protocol == "tcp" {
+					portSelector.SetSelected(name)
+					found = true
+					break
+				}
+				// If protocol does not match, treat as custom
 				break
 			}
 		}
 		if !found {
 			portSelector.SetSelected(serviceCustomName)
 			rp.SetText(prefill.RemotePort)
+			proto.SetSelected(prefill.Protocol)
+			rp.Enable()
+			proto.Enable()
 			proto.SetSelected(prefill.Protocol)
 		}
 	} else {
