@@ -24,7 +24,17 @@ type connectDelegate interface {
 
 // NewConnectDialog creates a new connection configuration dialog
 func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widget.PopUp {
-	targetsContainer := container.NewVBox()
+	targetsContainer := container.NewVBox(
+		container.NewGridWithColumns(7,
+			widget.NewLabel("Local Port"),
+			widget.NewLabel("Local Addr"),
+			widget.NewLabel("Type"),
+			widget.NewLabel("Remote Port"),
+			widget.NewLabel("Remote Addr"),
+			widget.NewLabel("Protocol"),
+			widget.NewLabel(""),
+		),
+	)
 	formContent := container.NewVBox()
 
 	saved, exists := d.GetStore().GetSaved(device.NodeID)
@@ -51,39 +61,7 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 	var dialog *widget.PopUp
 
 	connectBtn := widget.NewButton("Save & Connect", func() {
-		var targets []client.RemoteAccessTarget
-		for _, obj := range targetsContainer.Objects {
-			if row, ok := obj.(*fyne.Container); ok {
-				targets = append(targets, client.RemoteAccessTarget{
-					LocalPort:  row.Objects[0].(*widget.Entry).Text,
-					LocalHost:  row.Objects[1].(*widget.Entry).Text,
-					RemotePort: row.Objects[2].(*widget.Entry).Text,
-					RemoteHost: row.Objects[3].(*widget.Entry).Text,
-					Protocol:   row.Objects[4].(*widget.Select).Selected,
-				})
-			}
-		}
-
-		ctx, cancel := context.WithCancel(d.GetContext())
-		d.GetStore().SetActive(device.NodeID, &service.DeviceConnections{Targets: targets, Cancel: cancel})
-
-		go func() {
-			defer func() {
-				cancel()
-				d.GetStore().DeleteActive(device.NodeID)
-				fyne.DoAndWait(func() { d.RefreshUI() })
-			}()
-			if err := d.GetClient().Connect(ctx, device.NodeID, targets); err != nil {
-				d.DisplayError("Connection Error", err.Error())
-			}
-		}()
-
-		err := d.GetStore().SaveToDisk(device.NodeID, targets)
-		if err != nil {
-			d.DisplayError("Save Error", err.Error())
-		}
-		d.RefreshUI()
-		dialog.Hide()
+		saveAndConnect(d, device, targetsContainer, dialog)
 	})
 
 	footer := container.NewHBox(
@@ -104,12 +82,56 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 	return dialog
 }
 
+func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targetsContainer *fyne.Container, dialog *widget.PopUp) {
+	var targets []client.RemoteAccessTarget
+	for rowIndex, obj := range targetsContainer.Objects {
+		// Skip the header row
+		if rowIndex == 0 {
+			continue
+		}
+		if row, ok := obj.(*fyne.Container); ok {
+			targets = append(targets, client.RemoteAccessTarget{
+				LocalPort:  row.Objects[0].(*widget.Entry).Text,
+				LocalHost:  row.Objects[1].(*widget.Entry).Text,
+				RemotePort: row.Objects[3].(*widget.Entry).Text,
+				RemoteHost: row.Objects[4].(*widget.Entry).Text,
+				Protocol:   row.Objects[5].(*widget.Select).Selected,
+			})
+		}
+	}
+
+	ctx, cancel := context.WithCancel(d.GetContext())
+	d.GetStore().SetActive(device.NodeID, &service.DeviceConnections{
+		Targets: targets,
+		Cancel:  cancel,
+	})
+
+	go func() {
+		defer func() {
+			cancel()
+			d.GetStore().DeleteActive(device.NodeID)
+			fyne.DoAndWait(func() { d.RefreshUI() })
+		}()
+		if err := d.GetClient().Connect(ctx, device.NodeID, targets); err != nil {
+			d.DisplayError("Connection Error", err.Error())
+		}
+	}()
+
+	err := d.GetStore().SaveToDisk(device.NodeID, targets)
+	if err != nil {
+		d.DisplayError("Save Error", err.Error())
+	}
+	d.RefreshUI()
+	dialog.Hide()
+}
+
 func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.RemoteAccessTarget) {
 	lp := widget.NewEntry()
 	lp.SetPlaceHolder("Local Port")
 	la := widget.NewEntry()
 	la.SetPlaceHolder("Local Addr")
 	la.SetText("127.0.0.1")
+
 	rp := widget.NewEntry()
 	rp.SetPlaceHolder("Remote Port")
 	ra := widget.NewEntry()
@@ -118,16 +140,53 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 	proto := widget.NewSelect([]string{"tcp", "udp"}, nil)
 	proto.SetSelected("tcp")
 
+	portSelector := widget.NewSelect(servicePortNames,
+		func(s string) {
+			if s != serviceCustomName {
+				proto.SetSelected("tcp")
+				rp.SetText(servicePortMap[s])
+				rp.Disable()
+				proto.Disable()
+			} else {
+				rp.SetText("")
+				rp.Enable()
+				proto.Enable()
+			}
+		})
+
 	if prefill != nil {
 		lp.SetText(prefill.LocalPort)
 		la.SetText(prefill.LocalHost)
-		rp.SetText(prefill.RemotePort)
 		ra.SetText(prefill.RemoteHost)
-		proto.SetSelected(prefill.Protocol)
+		// set port selector based on prefill
+		found := false
+		for name, port := range servicePortMap {
+			if port == prefill.RemotePort {
+				// Only select the predefined port if the protocol matches the default ("tcp")
+				if prefill.Protocol == "tcp" {
+					portSelector.SetSelected(name)
+					found = true
+					break
+				}
+				// If protocol does not match, treat as custom
+				break
+			}
+		}
+		if !found {
+			portSelector.SetSelected(serviceCustomName)
+			rp.SetText(prefill.RemotePort)
+			proto.SetSelected(prefill.Protocol)
+			rp.Enable()
+			proto.Enable()
+			proto.SetSelected(prefill.Protocol)
+		}
+	} else {
+		// trigger port selector to set initial state
+		portSelector.SetSelected(servicePortNames[0])
 	}
 
 	rmBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
-	row := container.NewGridWithColumns(6, lp, la, rp, ra, proto, rmBtn)
+	row := container.NewGridWithColumns(7, lp, la, portSelector, rp, ra, proto, rmBtn)
 
 	rmBtn.OnTapped = func() {
 		c.Remove(row)
