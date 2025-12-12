@@ -222,10 +222,8 @@ func (app *App) Run() {
 	})
 
 	// Initial title update
-	{
-		count := len(app.store.SnapshotActive())
-		app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
-	}
+	count := len(app.store.SnapshotActive())
+	app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
 
 	app.mainWin.SetContent(container.NewStack(app.activeTabs, app.loadingOverlay))
 
