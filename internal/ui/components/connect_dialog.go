@@ -170,6 +170,7 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 		if !found {
 			portSelector.SetSelected(serviceCustomName)
 			rp.SetText(prefill.RemotePort)
+			proto.SetSelected(prefill.Protocol)
 		}
 	} else {
 		// trigger port selector to set initial state
