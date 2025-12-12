@@ -1,11 +1,6 @@
 package components
 
 const (
-	portMin = 1024
-	portMax = 65535
-)
-
-const (
 	serviceSSHPort   = "22"
 	serviceHTTPPort  = "80"
 	serviceHTTPSPort = "443"
