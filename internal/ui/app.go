@@ -210,9 +210,6 @@ func (app *App) Run() {
 	app.unsubscribe = app.store.Subscribe(func() {
 		fyne.Do(func() {
 			// refresh active view
-			/*if v, ok := activeView.(*components.ActiveConnectionsView); ok {
-				v.Refresh()
-			}*/
 			components.RefreshActiveConnections(app, app.activeView)
 
 			// update count in tab title
