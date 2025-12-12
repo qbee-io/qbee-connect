@@ -161,5 +161,4 @@ func (cs *ConnectionStore) Disconnect(deviceID string) {
 		conn.Cancel()
 	}
 	cs.DeleteActive(deviceID)
-	cs.notify()
 }
