@@ -102,6 +102,7 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 
 	ctx, cancel := context.WithCancel(d.GetContext())
 	d.GetStore().SetActive(device.NodeID, &service.DeviceConnections{
+		Title:   device.Title,
 		Targets: targets,
 		Cancel:  cancel,
 	})

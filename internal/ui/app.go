@@ -210,7 +210,7 @@ func (app *App) Run() {
 	app.unsubscribe = app.store.Subscribe(func() {
 		fyne.Do(func() {
 			// refresh active view
-			components.RefreshActiveConnections(app, app.activeView)
+			components.UpdateActiveConnectionsView(app, app.activeView)
 
 			// update count in tab title
 			count := len(app.store.SnapshotActive())
