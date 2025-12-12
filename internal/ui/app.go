@@ -51,10 +51,9 @@ type App struct {
 	store *service.ConnectionStore
 
 	// tabs & active connections
-	activeTabs  *container.AppTabs
-	activeView  fyne.CanvasObject
-	activeTab   *container.TabItem
-	unsubscribe func()
+	activeTabs *container.AppTabs
+	activeView fyne.CanvasObject
+	activeTab  *container.TabItem
 
 	// deviceModel represents the device data model
 	deviceModel *model.DeviceModel
@@ -203,24 +202,6 @@ func (app *App) Run() {
 	app.activeTabs = container.NewAppTabs(devicesTab, app.activeTab)
 	app.activeTabs.SetTabLocation(container.TabLocationTop)
 
-	// subscribe to store updates to refresh both tabs and update count
-	if app.unsubscribe != nil {
-		app.unsubscribe()
-	}
-	app.unsubscribe = app.store.Subscribe(func() {
-		fyne.Do(func() {
-			// refresh active view
-			components.UpdateActiveConnectionsView(app, app.activeView)
-
-			// update count in tab title
-			count := len(app.store.SnapshotActive())
-			app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
-			app.activeTabs.Refresh()
-			// keep device table up-to-date too
-			app.deviceList.Refresh()
-		})
-	})
-
 	// Initial title update
 	count := len(app.store.SnapshotActive())
 	app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
@@ -261,6 +242,20 @@ func (app *App) RefreshUI() {
 			app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
 			return
 		}
+
+		// Update active connections view
+		fyne.Do(func() {
+			components.UpdateActiveConnectionsView(app, app.activeView)
+		})
+
+		// Update active connections count in tab title
+		count := len(app.store.SnapshotActive())
+		app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
+
+		fyne.Do(func() {
+			app.activeTabs.Refresh()
+		})
+
 		app.RedrawDeviceList()
 	}()
 }

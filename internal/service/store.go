@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"maps"
 	"slices"
 	"sync"
 
@@ -29,7 +30,6 @@ type ConnectionStore struct {
 	savedItems  map[string][]client.RemoteAccessTarget
 	mutex       sync.Mutex
 	storage     fyne.Storage
-	listeners   []func()
 }
 
 // NewConnectionStore initializes a new ConnectionStore
@@ -59,7 +59,6 @@ func (cs *ConnectionStore) SetActive(deviceID string, conn *DeviceConnections) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 	cs.activeItems[deviceID] = conn
-	cs.notify()
 }
 
 // DeleteActive removes active connections from memory
@@ -67,7 +66,6 @@ func (cs *ConnectionStore) DeleteActive(deviceID string) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 	delete(cs.activeItems, deviceID)
-	cs.notify()
 }
 
 // GetSaved retrieves saved connections from disk
@@ -124,41 +122,6 @@ func (cs *ConnectionStore) SnapshotActive() map[string]*DeviceConnections {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 	out := make(map[string]*DeviceConnections, len(cs.activeItems))
-	for k, v := range cs.activeItems {
-		out[k] = v
-	}
+	maps.Copy(out, cs.activeItems)
 	return out
-}
-
-// Subscribe to changes in activeItems. Returns an unsubscribe function.
-func (cs *ConnectionStore) Subscribe(l func()) func() {
-	cs.mutex.Lock()
-	defer cs.mutex.Unlock()
-	cs.listeners = append(cs.listeners, l)
-	idx := len(cs.listeners) - 1
-	return func() {
-		cs.mutex.Lock()
-		defer cs.mutex.Unlock()
-		if idx >= 0 && idx < len(cs.listeners) {
-			cs.listeners[idx] = nil
-		}
-	}
-}
-
-// notify all listeners (best-effort, non-blocking)
-func (cs *ConnectionStore) notify() {
-	for _, l := range cs.listeners {
-		if l != nil {
-			go l()
-		}
-	}
-}
-
-// Disconnect cancels and removes all active connections for a device id.
-func (cs *ConnectionStore) Disconnect(deviceID string) {
-	// cancel outside of lock to avoid deadlocks if callbacks involve UI
-	if conn, ok := cs.GetActive(deviceID); ok && conn != nil && conn.Cancel != nil {
-		conn.Cancel()
-	}
-	cs.DeleteActive(deviceID)
 }
