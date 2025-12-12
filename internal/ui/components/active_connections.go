@@ -48,7 +48,7 @@ func RefreshActiveConnections(a activeConnectionsDelegate, activeView fyne.Canva
 
 	for _, id := range ids {
 		conn := active[id]
-		md := "# " + conn.Title + "\n Device ID: " + id + "\n\n"
+		md := "# " + conn.Title + "\n**Device ID:** " + id + "\n\n"
 		for _, t := range conn.Targets {
 			md += fmt.Sprintf("- **%s**: %s:%s → %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
 		}
