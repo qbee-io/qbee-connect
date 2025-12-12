@@ -244,9 +244,9 @@ func (app *App) RefreshUI() {
 		}
 
 		// Update active connections view
-		fyne.Do(func() {
-			components.UpdateActiveConnectionsView(app, app.activeView)
-		})
+		//fyne.Do(func() {
+		components.UpdateActiveConnectionsView(app, app.activeView)
+		//
 
 		// Update active connections count in tab title
 		count := len(app.store.SnapshotActive())
