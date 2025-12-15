@@ -152,9 +152,16 @@ func (app *App) Run() {
 			app.DisplayError("Invalid Selection", "Please select a valid number of items per page.")
 			return
 		}
+
+		if pp < app.deviceModel.Query.ItemsPerPage {
+			app.deviceList.ScrollToTop()
+		}
+
 		app.deviceModel.Query.ItemsPerPage = pp
 		app.deviceModel.CurrentPage = 0
+
 		app.RefreshUI()
+
 	})
 	setItemsPerPage.SetSelected("10")
 
@@ -221,8 +228,18 @@ func (app *App) Run() {
 	app.mainWin.ShowAndRun()
 }
 
-// RefreshUI fetches device data and refreshes the UI
+// RefreshUI() refreshes the UI with device data
 func (app *App) RefreshUI() {
+	app.LoadDevicesAndRefreshUI(true)
+}
+
+// RefreshUINoLoad refreshes the UI without loading device data
+func (app *App) RefreshUINoLoad() {
+	app.LoadDevicesAndRefreshUI(false)
+}
+
+// RefreshUI fetches device data and refreshes the UI
+func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 	// If the main window is not visible, skip the refresh
 	if !app.mainWindowVisible.Load() {
 		return
@@ -231,33 +248,37 @@ func (app *App) RefreshUI() {
 	// Start the loading indicator
 	app.loadingProgressBar.Start()
 	app.loadingOverlay.Show()
+
+	// Load device data in a separate goroutine
 	go func() {
-		defer fyne.DoAndWait(func() {
-			app.loadingOverlay.Hide()
-			// Stop the loading indicator to avoid CPU usage
+		defer fyne.Do(func() {
+
+			components.UpdateActiveConnectionsView(app, app.activeView)
+
+			// Update active connections count in tab title
+			count := len(app.store.SnapshotActive())
+			app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
+
+			app.activeTabs.Refresh()
+
+			app.RedrawDeviceList()
+
+			// Stop loading indicator to avoid CPU usage
 			app.loadingProgressBar.Stop()
+			app.loadingOverlay.Hide()
+
 		})
 
-		if err := app.LoadDeviceData(); err != nil {
-			app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
+		if !loadDevices {
 			return
 		}
 
-		// Update active connections view
-		//fyne.Do(func() {
-		components.UpdateActiveConnectionsView(app, app.activeView)
-		//
-
-		// Update active connections count in tab title
-		count := len(app.store.SnapshotActive())
-		app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
-
-		fyne.Do(func() {
-			app.activeTabs.Refresh()
-		})
-
-		app.RedrawDeviceList()
+		if err := app.LoadDeviceData(); err != nil {
+			app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
+		}
 	}()
+	// blocking wait to ensure data is loaded before proceeding
+
 }
 
 // LoadDeviceData loads device data from the backend
@@ -284,14 +305,9 @@ func (app *App) RedrawDeviceList() {
 		app.deviceModel.FilteredData.Items = filtered
 	}
 
-	fyne.Do(func() {
-		app.pageInfoLabel.SetText(fmt.Sprintf("Page %d / %d", app.deviceModel.CurrentPage+1, app.deviceModel.TotalPages()))
-	})
+	app.pageInfoLabel.SetText(fmt.Sprintf("Page %d / %d", app.deviceModel.CurrentPage+1, app.deviceModel.TotalPages()))
 
-	fyne.Do(func() {
-		app.deviceList.ScrollToTop()
-		app.deviceList.Refresh()
-	})
+	app.deviceList.Refresh()
 }
 
 // MakeTray creates a system tray icon with menu

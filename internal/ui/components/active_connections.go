@@ -66,7 +66,5 @@ func UpdateActiveConnectionsView(a activeConnectionsDelegate, activeView fyne.Ca
 		root.Add(row)
 	}
 
-	fyne.Do(func() {
-		root.Refresh()
-	})
+	root.Refresh()
 }
