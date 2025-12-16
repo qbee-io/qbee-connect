@@ -21,7 +21,6 @@ type infoDelegate interface {
 }
 
 func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widget.PopUp {
-	// Implementation of device info dialog goes here
 
 	targetInfo, ok := d.GetStore().GetActive(device.NodeID)
 	infoContainer := container.NewVBox(
