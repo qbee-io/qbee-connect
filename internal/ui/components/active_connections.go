@@ -55,7 +55,12 @@ func UpdateActiveConnectionsView(a activeConnectionsDelegate, activeView fyne.Ca
 		mdWidget := widget.NewRichTextFromMarkdown(md)
 
 		devID := id
-		btn := widget.NewButton("Disconnect", func() { a.GetStore().Disconnect(devID) })
+		btn := widget.NewButton("Disconnect", func() {
+			activeConn, ok := a.GetStore().GetActive(devID)
+			if ok && activeConn.Cancel != nil {
+				activeConn.Cancel()
+			}
+		})
 
 		row := container.NewBorder(nil, container.NewHBox(layout.NewSpacer(), btn), nil, nil, mdWidget)
 		root.Add(row)

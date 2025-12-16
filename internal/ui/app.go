@@ -51,10 +51,9 @@ type App struct {
 	store *service.ConnectionStore
 
 	// tabs & active connections
-	activeTabs  *container.AppTabs
-	activeView  fyne.CanvasObject
-	activeTab   *container.TabItem
-	unsubscribe func()
+	activeTabs *container.AppTabs
+	activeView fyne.CanvasObject
+	activeTab  *container.TabItem
 
 	// deviceModel represents the device data model
 	deviceModel *model.DeviceModel
@@ -153,9 +152,12 @@ func (app *App) Run() {
 			app.DisplayError("Invalid Selection", "Please select a valid number of items per page.")
 			return
 		}
-		app.deviceModel.Query.ItemsPerPage = pp
+
 		app.deviceModel.CurrentPage = 0
+		app.deviceModel.Query.ItemsPerPage = pp
+
 		app.RefreshUI()
+
 	})
 	setItemsPerPage.SetSelected("10")
 
@@ -203,24 +205,6 @@ func (app *App) Run() {
 	app.activeTabs = container.NewAppTabs(devicesTab, app.activeTab)
 	app.activeTabs.SetTabLocation(container.TabLocationTop)
 
-	// subscribe to store updates to refresh both tabs and update count
-	if app.unsubscribe != nil {
-		app.unsubscribe()
-	}
-	app.unsubscribe = app.store.Subscribe(func() {
-		fyne.Do(func() {
-			// refresh active view
-			components.UpdateActiveConnectionsView(app, app.activeView)
-
-			// update count in tab title
-			count := len(app.store.SnapshotActive())
-			app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
-			app.activeTabs.Refresh()
-			// keep device table up-to-date too
-			app.deviceList.Refresh()
-		})
-	})
-
 	// Initial title update
 	count := len(app.store.SnapshotActive())
 	app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
@@ -240,8 +224,18 @@ func (app *App) Run() {
 	app.mainWin.ShowAndRun()
 }
 
-// RefreshUI fetches device data and refreshes the UI
+// RefreshUI() refreshes the UI with device data
 func (app *App) RefreshUI() {
+	app.LoadDevicesAndRefreshUI(true)
+}
+
+// RefreshUINoLoad refreshes the UI without loading device data
+func (app *App) RefreshUINoLoad() {
+	app.LoadDevicesAndRefreshUI(false)
+}
+
+// RefreshUI fetches device data and refreshes the UI
+func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 	// If the main window is not visible, skip the refresh
 	if !app.mainWindowVisible.Load() {
 		return
@@ -250,19 +244,36 @@ func (app *App) RefreshUI() {
 	// Start the loading indicator
 	app.loadingProgressBar.Start()
 	app.loadingOverlay.Show()
+
+	// Load device data in a separate goroutine
 	go func() {
-		defer fyne.DoAndWait(func() {
-			app.loadingOverlay.Hide()
-			// Stop the loading indicator to avoid CPU usage
+		defer fyne.Do(func() {
+
+			components.UpdateActiveConnectionsView(app, app.activeView)
+
+			// Update active connections count in tab title
+			count := len(app.store.SnapshotActive())
+			app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
+			app.activeTabs.Refresh()
+
+			app.RedrawDeviceList()
+
+			// Stop loading indicator to avoid CPU usage
 			app.loadingProgressBar.Stop()
+			app.loadingOverlay.Hide()
+
 		})
+
+		if !loadDevices {
+			return
+		}
 
 		if err := app.LoadDeviceData(); err != nil {
 			app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
-			return
 		}
-		app.RedrawDeviceList()
 	}()
+	// blocking wait to ensure data is loaded before proceeding
+
 }
 
 // LoadDeviceData loads device data from the backend
@@ -278,25 +289,30 @@ func (app *App) LoadDeviceData() error {
 
 // RedrawDeviceList applies current filters and refreshes the device list UI
 func (app *App) RedrawDeviceList() {
-	app.deviceModel.FilteredData = app.deviceModel.DeviceData
+
+	//app.deviceModel.FilteredData = app.deviceModel.DeviceData
+	var filtered []client.InventoryListItem
+
 	if app.deviceModel.ActiveTunnelsOnly {
-		var filtered []client.InventoryListItem
 		for _, item := range app.deviceModel.FilteredData.Items {
 			if _, ok := app.store.GetActive(item.NodeID); ok {
 				filtered = append(filtered, item)
 			}
 		}
-		app.deviceModel.FilteredData.Items = filtered
+	} else {
+		filtered = app.deviceModel.DeviceData.Items
 	}
 
-	fyne.Do(func() {
-		app.pageInfoLabel.SetText(fmt.Sprintf("Page %d / %d", app.deviceModel.CurrentPage+1, app.deviceModel.TotalPages()))
-	})
-
-	fyne.Do(func() {
+	// Determine if we need to scroll to top if the new filtered list is smaller
+	// than the previous one
+	if len(filtered) < len(app.deviceModel.FilteredData.Items) {
 		app.deviceList.ScrollToTop()
-		app.deviceList.Refresh()
-	})
+	}
+
+	app.deviceModel.FilteredData.Items = filtered
+	app.pageInfoLabel.SetText(fmt.Sprintf("Page %d / %d", app.deviceModel.CurrentPage+1, app.deviceModel.TotalPages()))
+
+	app.deviceList.Refresh()
 }
 
 // MakeTray creates a system tray icon with menu

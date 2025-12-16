@@ -18,7 +18,7 @@ type connectDelegate interface {
 	GetContext() context.Context
 	GetStore() *service.ConnectionStore
 	GetWindow() fyne.Window
-	RefreshUI()
+	RefreshUINoLoad()
 	DisplayError(title, msg string)
 }
 
@@ -111,7 +111,7 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 		defer func() {
 			cancel()
 			d.GetStore().DeleteActive(device.NodeID)
-			fyne.DoAndWait(func() { d.RefreshUI() })
+			d.RefreshUINoLoad()
 		}()
 		if err := d.GetClient().Connect(ctx, device.NodeID, targets); err != nil {
 			d.DisplayError("Connection Error", err.Error())
@@ -122,7 +122,7 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	if err != nil {
 		d.DisplayError("Save Error", err.Error())
 	}
-	d.RefreshUI()
+	d.RefreshUINoLoad()
 	dialog.Hide()
 }
 
