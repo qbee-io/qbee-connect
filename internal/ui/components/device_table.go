@@ -19,6 +19,7 @@ type tableDelegate interface {
 	GetDeviceModel() *model.DeviceModel
 	GetStore() *service.ConnectionStore
 	ShowConnectDialog(item *client.InventoryListItem)
+	ShowInfoDialog(item *client.InventoryListItem)
 }
 
 const (
@@ -136,8 +137,24 @@ func updateGroupCell(cell *fyne.Container, item client.InventoryListItem) {
 
 // updateConnectionStatusCell updates the connection status cell with current connection info
 func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
-	text := updateConnectionStatus(d, item)
-	updateLabelCell(cell, text)
+	noConnections := updateConnectionStatus(d, item)
+	button := widget.NewButton("", nil)
+
+	if noConnections == 0 {
+		updateLabelCell(cell, "-")
+		return
+	}
+
+	text := fmt.Sprintf("%d active", noConnections)
+	label := widget.NewLabel(text)
+
+	button.SetIcon(theme.InfoIcon())
+	button.OnTapped = func() {
+		d.ShowInfoDialog(&item)
+	}
+
+	cell.RemoveAll()
+	cell.Add(container.NewBorder(nil, nil, button, label))
 }
 
 // updateLabelCell updates a cell with a simple text label
@@ -214,13 +231,13 @@ func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject)
 }
 
 // updateConnectionStatus returns the formatted connection information for a device
-func updateConnectionStatus(d tableDelegate, item client.InventoryListItem) string {
+func updateConnectionStatus(d tableDelegate, item client.InventoryListItem) int {
 	var activeConn *service.DeviceConnections
 	var ok bool
 
 	if activeConn, ok = d.GetStore().GetActive(item.NodeID); !ok {
-		return "-"
+		return 0
 	}
 
-	return fmt.Sprintf("%d targets open", len(activeConn.Targets))
+	return len(activeConn.Targets)
 }

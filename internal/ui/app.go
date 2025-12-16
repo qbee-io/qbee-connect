@@ -129,6 +129,11 @@ func (app *App) ShowConnectDialog(item *client.InventoryListItem) {
 	components.NewConnectDialog(app, item).Show()
 }
 
+// ShowInfoDialog displays the device information dialog
+func (app *App) ShowInfoDialog(item *client.InventoryListItem) {
+	components.NewDeviceInfoDialog(app, item).Show()
+}
+
 // DisplayError shows an error notification
 func (app *App) DisplayError(title, content string) {
 	app.fyneApp.SendNotification(&fyne.Notification{Title: title, Content: content})
