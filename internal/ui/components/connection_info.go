@@ -119,7 +119,7 @@ func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasOb
 				i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())
 				return
 			}
-			fyne.CurrentApp().OpenURL(urlObj)
+			i.GetFyneApp().OpenURL(urlObj)
 		})
 		openURL.SetIcon(theme.MailSendIcon())
 		return openURL
