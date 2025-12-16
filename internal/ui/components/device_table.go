@@ -138,13 +138,13 @@ func updateGroupCell(cell *fyne.Container, item client.InventoryListItem) {
 // updateConnectionStatusCell updates the connection status cell with current connection info
 func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
 	connectionCount := updateConnectionStatus(d, item)
-	button := widget.NewButton("", nil)
 
-	if connectionCount == 0 {
+	if noConnections == 0 {
 		updateLabelCell(cell, "-")
 		return
 	}
 
+	button := widget.NewButton("", nil)
 	text := fmt.Sprintf("%d active", connectionCount)
 	label := widget.NewLabel(text)
 
