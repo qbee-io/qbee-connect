@@ -20,6 +20,7 @@ type infoDelegate interface {
 	DisplayError(title, msg string)
 }
 
+// NewDeviceInfoDialog creates a dialog showing connection info for a device
 func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widget.PopUp {
 
 	targetInfo, ok := d.GetStore().GetActive(device.NodeID)
