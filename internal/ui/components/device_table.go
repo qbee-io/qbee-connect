@@ -154,7 +154,7 @@ func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item clie
 	}
 
 	cell.RemoveAll()
-	cell.Add(container.NewBorder(nil, nil, button, label))
+	cell.Add(container.NewBorder(nil, nil, label, button))
 }
 
 // updateLabelCell updates a cell with a simple text label
