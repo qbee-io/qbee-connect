@@ -80,8 +80,8 @@ type DeviceColumn struct {
 var DeviceColumns = []DeviceColumn{
 	{Title: "Device", Sortable: true, SortKey: "title", WidthQuotient: 0.19},
 	{Title: "Online", Sortable: true, SortKey: "exp_hard", WidthQuotient: 0.10},
+	{Title: "Connection Info", WidthQuotient: 0.15},
 	{Title: "Group", WidthQuotient: 0.30},
 	{Title: "Tags", WidthQuotient: 0.20},
-	{Title: "Connection Info", WidthQuotient: 0.15},
 	{Title: "", WidthQuotient: 0.06}, // Actions column
 }

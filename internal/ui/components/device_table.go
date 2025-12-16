@@ -83,12 +83,12 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 		updateTitleCell(cell, item)
 	case 1:
 		updateStatusCell(cell, item)
-	case 2:
-		updateGroupCell(cell, item)
-	case 3:
-		updateTagsCell(cell, item)
-	case 4: // Connection Info Column
+	case 2: // Connection Info Column
 		updateConnectionStatusCell(d, cell, item)
+	case 3:
+		updateGroupCell(cell, item)
+	case 4:
+		updateTagsCell(cell, item)
 	case 5:
 		updateActionCell(d, cell, item)
 	}
@@ -139,7 +139,7 @@ func updateGroupCell(cell *fyne.Container, item client.InventoryListItem) {
 func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
 	connectionCount := updateConnectionStatus(d, item)
 
-	if noConnections == 0 {
+	if connectionCount == 0 {
 		updateLabelCell(cell, "-")
 		return
 	}
