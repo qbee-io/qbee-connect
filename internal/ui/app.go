@@ -153,12 +153,8 @@ func (app *App) Run() {
 			return
 		}
 
-		if pp < app.deviceModel.Query.ItemsPerPage {
-			app.deviceList.ScrollToTop()
-		}
-
-		app.deviceModel.Query.ItemsPerPage = pp
 		app.deviceModel.CurrentPage = 0
+		app.deviceModel.Query.ItemsPerPage = pp
 
 		app.RefreshUI()
 
@@ -258,7 +254,6 @@ func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 			// Update active connections count in tab title
 			count := len(app.store.SnapshotActive())
 			app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
-
 			app.activeTabs.Refresh()
 
 			app.RedrawDeviceList()
@@ -294,17 +289,27 @@ func (app *App) LoadDeviceData() error {
 
 // RedrawDeviceList applies current filters and refreshes the device list UI
 func (app *App) RedrawDeviceList() {
-	app.deviceModel.FilteredData = app.deviceModel.DeviceData
+
+	//app.deviceModel.FilteredData = app.deviceModel.DeviceData
+	var filtered []client.InventoryListItem
+
 	if app.deviceModel.ActiveTunnelsOnly {
-		var filtered []client.InventoryListItem
 		for _, item := range app.deviceModel.FilteredData.Items {
 			if _, ok := app.store.GetActive(item.NodeID); ok {
 				filtered = append(filtered, item)
 			}
 		}
-		app.deviceModel.FilteredData.Items = filtered
+	} else {
+		filtered = app.deviceModel.DeviceData.Items
 	}
 
+	// Determine if we need to scroll to top if the new filtered list is smaller
+	// than the previous one
+	if len(filtered) < len(app.deviceModel.FilteredData.Items) {
+		app.deviceList.ScrollToTop()
+	}
+
+	app.deviceModel.FilteredData.Items = filtered
 	app.pageInfoLabel.SetText(fmt.Sprintf("Page %d / %d", app.deviceModel.CurrentPage+1, app.deviceModel.TotalPages()))
 
 	app.deviceList.Refresh()
