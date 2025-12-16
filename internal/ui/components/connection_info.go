@@ -93,11 +93,11 @@ func renderMappedPort(t client.RemoteAccessTarget) string {
 	case "3389":
 		return "mstsc /v:" + t.LocalHost + ":" + t.LocalPort
 	case "80", "443":
-		t.Protocol = "https"
+		scheme := "https"
 		if t.RemotePort == "80" {
-			t.Protocol = "http"
+			scheme = "http"
 		}
-		return t.Protocol + "://" + t.LocalHost + ":" + t.LocalPort
+		return scheme + "://" + t.LocalHost + ":" + t.LocalPort
 
 	default:
 		return t.LocalPort
