@@ -15,13 +15,6 @@ import (
 	"go.qbee.io/client"
 )
 
-type LoginDialog struct {
-	dialog  dialog.Dialog
-	onAuth  func(string) error
-	authURL string
-	window  fyne.Window
-}
-
 type loginDelegate interface {
 	GetWindow() fyne.Window
 	GetClient() *client.Client
@@ -34,7 +27,6 @@ type loginDelegate interface {
 
 type pollData struct {
 	deviceAuth *client.OAuth2DeviceAuthorizationResponse
-	resultChan chan<- error
 	stopped    bool
 }
 

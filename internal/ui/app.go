@@ -36,8 +36,6 @@ const (
 
 // App represents the main application structure
 type App struct {
-	// baseUrl is the backend base URL
-	baseUrl string
 
 	// fyneApp is the main Fyne application instance
 	fyneApp fyne.App
@@ -118,8 +116,6 @@ func NewApp() *App {
 	if baseURL != "" && baseURL != cli.GetBaseURL() {
 		cli = client.New().WithBaseURL(baseURL)
 	}
-
-	fmt.Printf("Using backend base URL: %s\n", cli.GetBaseURL())
 
 	return &App{
 		fyneApp:       a,
@@ -404,9 +400,7 @@ func (app *App) SetLoggedIn() error {
 
 	sort.Strings(accountSelector)
 
-	var accountSwitchSelect *widget.Select
-
-	accountSwitchSelect = widget.NewSelect(accountSelector, func(selected string) {
+	accountSwitchSelect := widget.NewSelect(accountSelector, func(selected string) {
 		if selected == "" {
 			return
 		}
