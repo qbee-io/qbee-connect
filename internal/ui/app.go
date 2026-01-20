@@ -119,6 +119,8 @@ func NewApp() *App {
 		cli = client.New().WithBaseURL(baseURL)
 	}
 
+	fmt.Printf("Using backend base URL: %s\n", cli.GetBaseURL())
+
 	return &App{
 		fyneApp:       a,
 		mainWin:       w,

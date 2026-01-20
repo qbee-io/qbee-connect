@@ -41,88 +41,61 @@ type pollData struct {
 var authErr error
 
 func NewLoginDialog(ld loginDelegate) {
-	//resultChan := make(chan error)
-	// create and input field for the base URL
-	baseURLInput := widget.NewEntry()
-	baseURLInput.SetPlaceHolder(ld.GetClient().GetBaseURL())
-	baseURLInput.Text = ld.GetClient().GetBaseURL() // Default
-
-	// Create hyperlink for OAuth2 authentication
-	authLink := widget.NewHyperlink("Click here to authenticate", nil)
-	codeLabel := widget.NewLabel("")
-	loaderLabel := widget.NewLabel("")
-
-	var loginDialog dialog.Dialog
-
-	pollData := &pollData{
-		stopped: false,
+	deviceAuth, err := ld.GetClient().OAuth2DeviceAuthorizationRequest(ld.GetContext())
+	if err != nil {
+		ld.DisplayError("Authentication Error", fmt.Sprintf("failed to initiate device authorization: %v", err))
+		return
 	}
 
-	step2 := container.NewVBox(
+	parsedURL, err := url.Parse(deviceAuth.VerificationURI)
+	if err != nil {
+		ld.DisplayError("Authentication Error", fmt.Sprintf("failed to initiate device authorization: %v", err))
+		return
+	}
+
+	authLink := widget.NewHyperlink(deviceAuth.VerificationURI, parsedURL)
+	codeLabel := widget.NewLabel(fmt.Sprintf("User Code: %s", deviceAuth.UserCode))
+	loaderLabel := widget.NewLabel("")
+
+	// tick loader
+
+	content := container.NewVBox(
+		widget.NewLabel("Click the link to log in:"),
 		authLink,
 		codeLabel,
 		loaderLabel,
 	)
 
-	step2.Hide()
+	loginDialog := dialog.NewCustom("Authentication Required", "Close", content, ld.GetWindow())
 
-	var generateCodeBtn *widget.Button
+	pollData := &pollData{
+		stopped:    false,
+		deviceAuth: deviceAuth,
+	}
 
-	generateCodeBtn = widget.NewButton("Generate Device Code", func() {
-		ld.GetClient().WithBaseURL(baseURLInput.Text)
-		deviceAuth, err := ld.GetClient().OAuth2DeviceAuthorizationRequest(ld.GetContext())
-		if err != nil {
-			ld.DisplayError("Authentication Error", fmt.Sprintf("failed to initiate device authorization: %v", err))
-			return
+	go func() {
+		iter := 0
+		for !pollData.stopped {
+			iter += 1
+
+			fyne.Do(func() {
+				loaderLabel.SetText(fmt.Sprintf("Waiting for authentication%s", strings.Repeat(".", iter%4)))
+			})
+
+			time.Sleep(250 * time.Millisecond)
 		}
+	}()
 
-		if parsedURL, err := url.Parse(deviceAuth.VerificationURI); err == nil {
-			authLink.SetURL(parsedURL)
-		}
+	err = pollForToken(ld, loginDialog, pollData)
+	if err != nil {
+		ld.DisplayError("Authentication Error", fmt.Sprintf("failed to obtain token: %v", err))
+		return
+	}
 
-		generateCodeBtn.Disable()
-		codeLabel.SetText(fmt.Sprintf("User Code: %s", deviceAuth.UserCode))
-
-		// tick loader
-		go func() {
-			iter := 0
-			for !pollData.stopped {
-				iter += 1
-
-				fyne.Do(func() {
-					loaderLabel.SetText(fmt.Sprintf("Waiting for authentication%s", strings.Repeat(".", iter%4)))
-				})
-
-				time.Sleep(250 * time.Millisecond)
-			}
-		}()
-
-		step2.Show()
-		// Start polling for token
-		pollData.deviceAuth = deviceAuth
-		err = pollForToken(ld, loginDialog, pollData)
-		if err != nil {
-			ld.DisplayError("Authentication Error", fmt.Sprintf("failed to obtain token: %v", err))
-			return
-		}
-	})
-
-	// Layout
-	content := container.NewVBox(
-		widget.NewLabel("Please authenticate to continue."),
-		widget.NewLabel("Enter the Base URL of your Qbee.io instance:"),
-		baseURLInput,
-		generateCodeBtn,
-		step2,
-	)
-
-	loginDialog = dialog.NewCustom("Authentication Required", "Close", content, ld.GetWindow())
 	loginDialog.SetOnClosed(func() {
-		// stop any active polling or cleanup if necessary
 		pollData.stopped = true
-		//resultChan <- authErr
-
 	})
+
 	loginDialog.Resize(fyne.NewSize(500, 400))
 	loginDialog.Show()
 }
