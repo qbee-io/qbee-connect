@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
-	"net/http"
+	"sort"
 	"sync/atomic"
 
 	"fyne.io/fyne/v2"
@@ -50,6 +50,9 @@ type App struct {
 	// store is the connection store
 	store *service.ConnectionStore
 
+	// mainContent holds the main content of the application
+	mainContent fyne.CanvasObject
+
 	// tabs & active connections
 	activeTabs *container.AppTabs
 	activeView fyne.CanvasObject
@@ -72,18 +75,17 @@ type App struct {
 
 	// mainWindowVisible indicates if the main window is currently visible
 	mainWindowVisible atomic.Bool
+
+	// accountSwitcher allows switching between tenant accounts the user has access to
+	accountSwitcher *fyne.Container
+
+	// userData
+	user *model.User
 }
 
 // NewApp initializes the main application structure
 func NewApp() *App {
 	ctx := context.Background()
-	cli, err := client.LoginGetAuthenticatedClient(ctx)
-	if err != nil {
-		cli, err = service.TerminalLogin()
-		if err != nil {
-			log.Fatalln("failed to login:", err)
-		}
-	}
 
 	a := app.New()
 	w := a.NewWindow("qbee-connect - qbee.io")
@@ -95,6 +97,11 @@ func NewApp() *App {
 	store, err := service.NewConnectionStore(a.Storage())
 	if err != nil {
 		log.Fatalln("failed to initialize connection store:", err)
+	}
+
+	cli, err := client.LoginGetAuthenticatedClient(ctx)
+	if err != nil {
+		cli = client.New()
 	}
 
 	return &App{
@@ -166,7 +173,12 @@ func (app *App) Run() {
 	})
 	setItemsPerPage.SetSelected("10")
 
+	app.accountSwitcher = container.NewHBox(
+		widget.NewLabel("Account:"),
+	)
+
 	pagination := container.NewHBox(
+		app.accountSwitcher,
 		layout.NewSpacer(),
 		widget.NewLabel("Items per page:"),
 		setItemsPerPage,
@@ -186,6 +198,11 @@ func (app *App) Run() {
 		}),
 	)
 
+	if err := app.SetLoggedIn(); err != nil {
+		// Not logged in yet, show login dialog
+		components.NewLoginDialog(app)
+	}
+
 	searchBar := components.NewSearchBar(app)
 
 	content := container.NewBorder(
@@ -197,7 +214,11 @@ func (app *App) Run() {
 	// Loading Overlay
 	app.loadingProgressBar = widget.NewProgressBarInfinite()
 	overlay := canvas.NewRectangle(color.NRGBA{0, 0, 0, 180})
-	app.loadingOverlay = container.NewStack(overlay, container.NewCenter(container.NewVBox(widget.NewLabel("Loading..."), app.loadingProgressBar)))
+
+	inputBlocker := layouts.NewBlocker()
+	overlayContainer := container.NewStack(overlay, container.NewCenter(container.NewVBox(widget.NewLabel("Loading..."), app.loadingProgressBar)))
+
+	app.loadingOverlay = container.NewStack(inputBlocker, overlayContainer)
 
 	// Initial hide of loading overlay, stop the progress bar to avoid CPU usage
 	app.loadingProgressBar.Stop()
@@ -209,12 +230,12 @@ func (app *App) Run() {
 	devicesTab := container.NewTabItem("Devices", content)
 	app.activeTabs = container.NewAppTabs(devicesTab, app.activeTab)
 	app.activeTabs.SetTabLocation(container.TabLocationTop)
-
 	// Initial title update
 	count := len(app.store.SnapshotActive())
 	app.activeTab.Text = fmt.Sprintf("Active (%d)", count)
 
-	app.mainWin.SetContent(container.NewStack(app.activeTabs, app.loadingOverlay))
+	app.mainContent = container.NewStack(app.activeTabs, app.loadingOverlay)
+	app.mainWin.SetContent(app.mainContent)
 
 	app.mainWin.SetCloseIntercept(func() { app.mainWindowVisible.Store(false); app.mainWin.Hide() })
 	app.mainWin.Resize(fyne.NewSize(defaultWindowWidth, defaultWindowHeight))
@@ -246,6 +267,17 @@ func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 		return
 	}
 
+	if app.user == nil {
+		loginBtn := widget.NewButton("Log In", func() {
+			components.NewLoginDialog(app)
+		})
+		loginContainer := container.NewCenter(loginBtn)
+		app.mainWin.SetContent(loginContainer)
+		return
+	}
+
+	app.mainWin.SetContent(app.mainContent)
+
 	// Start the loading indicator
 	app.loadingProgressBar.Start()
 	app.loadingOverlay.Show()
@@ -272,24 +304,8 @@ func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 		if !loadDevices {
 			return
 		}
-
-		if err := app.LoadDeviceData(); err != nil {
-			app.DisplayError("Data Load Error", "Failed to load device data: "+err.Error())
-		}
+		app.GetDevices()
 	}()
-	// blocking wait to ensure data is loaded before proceeding
-
-}
-
-// LoadDeviceData loads device data from the backend
-func (app *App) LoadDeviceData() error {
-	app.deviceModel.Query.Offset = app.deviceModel.CurrentPage * app.deviceModel.Query.ItemsPerPage
-	devices, err := app.cli.ListDeviceInventory(app.ctx, *app.deviceModel.Query)
-	if err != nil {
-		return err
-	}
-	app.deviceModel.DeviceData = *devices
-	return nil
 }
 
 // RedrawDeviceList applies current filters and refreshes the device list UI
@@ -339,37 +355,80 @@ func (app *App) SetSearchQuery(query client.InventoryListSearch) {
 	app.RefreshUI()
 }
 
-// GetAllGroups fetches all groups from the backend
-func (app *App) GetAllGroups() *client.GroupTree {
-	allGroups, err := app.cli.GroupTreeGet(app.ctx, false)
-
-	if err != nil {
-		app.DisplayError("Group Fetch Error", "Failed to load groups: "+err.Error())
-		return &client.GroupTree{}
-	}
-	return allGroups
-}
-
-const tagsListPath = "/api/v2/tagslist"
-
-// GetAllTags fetches all tags from the backend
-func (app *App) GetAllTags() []string {
-	urlParams := make(map[string]string)
-	urlParams["scope"] = "nodes"
-	urlParams["format"] = "simple"
-
-	tagsListQuery := fmt.Sprintf("%s?scope=%s&format=%s", tagsListPath, urlParams["scope"], urlParams["format"])
-
-	allTags := make([]string, 0)
-	err := app.cli.Call(app.ctx, http.MethodGet, tagsListQuery, nil, &allTags)
-	if err != nil {
-		app.DisplayError("Tag Fetch Error", "Failed to load tags: "+err.Error())
-		return []string{}
-	}
-	return allTags
-}
-
 // GetFyneApp returns the underlying Fyne application instance
 func (app *App) GetFyneApp() fyne.App {
 	return app.fyneApp
+}
+
+// SetLoggedOut clears the user data
+func (app *App) SetLoggedOut() {
+	app.user = nil
+}
+
+// SetLoggedIn sets the user data after successful login
+func (app *App) SetLoggedIn() error {
+	user, err := app.GetUser()
+	if err != nil {
+		return err
+	}
+	app.user = user
+
+	accountMap := make(map[string]string)
+	accountSelector := make([]string, 0)
+
+	defaultAccount := ""
+	for _, acc := range app.user.Accounts {
+		accountSelector = append(accountSelector, acc.Name)
+		accountMap[acc.Name] = acc.ID
+		if user.User.AccountID == acc.ID {
+			defaultAccount = acc.Name
+		}
+	}
+
+	sort.Strings(accountSelector)
+
+	var accountSwitchSelect *widget.Select
+
+	accountSwitchSelect = widget.NewSelect(accountSelector, func(selected string) {
+		if selected == "" {
+			return
+		}
+
+		id, ok := accountMap[selected]
+		if !ok {
+			app.DisplayError("Account Switch Error", "Selected account not found.")
+			return
+		}
+
+		if id == app.user.User.AccountID {
+			// No change
+			return
+		}
+
+		if err := app.SwitchAccount(id); err != nil {
+			app.DisplayError("Account Switch Error", err.Error())
+			return
+		}
+
+		user, err := app.GetUser()
+		if err != nil {
+			app.DisplayError("Account Switch Error", "Failed to load user data: "+err.Error())
+			return
+		}
+		app.user = user
+
+		app.RefreshUI()
+	})
+
+	accountSwitchSelect.SetSelected(defaultAccount)
+
+	app.accountSwitcher.Objects = []fyne.CanvasObject{
+		widget.NewLabel("Account:"),
+		accountSwitchSelect,
+	}
+	fyne.Do(func() {
+		app.accountSwitcher.Refresh()
+	})
+
+	return nil
 }

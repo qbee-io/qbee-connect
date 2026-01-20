@@ -18,8 +18,8 @@ import (
 type searchBarDelegate interface {
 	RefreshUI()
 	SetSearchQuery(query client.InventoryListSearch)
-	GetAllTags() []string
-	GetAllGroups() *client.GroupTree
+	GetTags() []string
+	GetGroups() *client.GroupTree
 }
 
 const (
@@ -43,13 +43,11 @@ func NewSearchBar(d searchBarDelegate) *fyne.Container {
 			e := newGroupSearchComplete(d)
 			searchEntry.Add(e)
 		case searchTag:
-			// Implement Group search here...
-			e := newTagsSearchComplete(d) // Placeholder
+			e := newTagsSearchComplete(d)
 			searchEntry.Add(e)
 		default:
 			return
 		}
-		// Implement Tag search here...
 		searchEntry.Refresh()
 	})
 	searchSelect.SetSelected(searchDeviceName)
@@ -72,7 +70,7 @@ func newDeviceSearchEntry(d searchBarDelegate) *widget.Entry {
 
 func newTagsSearchComplete(d searchBarDelegate) *xwidget.CompletionEntry {
 
-	allTags := d.GetAllTags()
+	allTags := d.GetTags()
 
 	sort.Strings(allTags)
 
@@ -125,7 +123,7 @@ func newTagsSearchComplete(d searchBarDelegate) *xwidget.CompletionEntry {
 
 func newGroupSearchComplete(d searchBarDelegate) *xwidget.CompletionEntry {
 
-	groups := d.GetAllGroups()
+	groups := d.GetGroups()
 	groupMap := getGroupsBreadcrumb(*groups)
 
 	sortedKeys := make([]string, 0, len(groupMap))

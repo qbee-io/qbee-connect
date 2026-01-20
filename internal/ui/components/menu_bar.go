@@ -14,7 +14,7 @@ import (
 // MakeMenu constructs the main application menu
 func MakeMenu() *fyne.MainMenu {
 
-	openSettings := func() {
+	openAppearance := func() {
 		w := fyne.CurrentApp().NewWindow("Settings")
 		w.SetContent(settings.NewSettings().LoadAppearanceScreen(w))
 		w.Resize(fyne.NewSize(440, 520))
@@ -31,8 +31,8 @@ func MakeMenu() *fyne.MainMenu {
 		w.Show()
 	}
 	aboutItem := fyne.NewMenuItem("About", showAbout)
-	settingsItem := fyne.NewMenuItem("Settings", openSettings)
-	mainMenu := fyne.NewMenu("File", aboutItem, settingsItem)
+	appearanceItem := fyne.NewMenuItem("Appearance", openAppearance)
+	mainMenu := fyne.NewMenu("File", aboutItem, appearanceItem)
 	return fyne.NewMainMenu(mainMenu)
 }
 
