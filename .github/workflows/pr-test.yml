@@ -19,7 +19,9 @@ jobs:
         with:
           go-version: stable
       - name: Dependency Vulnerability Check
-        run: sudo apt install -y libgl1-mesa-dev xorg-dev
+        run: |
+          sudo apt update
+          sudo apt install -y libgl1-mesa-dev xorg-dev
       - id: govulncheck
         uses: golang/govulncheck-action@v1
         with:
