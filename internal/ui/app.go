@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	_ "embed" // for tray icon embedding
+	"flag"
 	"fmt"
 	"image/color"
 	"log"
@@ -35,6 +36,9 @@ const (
 
 // App represents the main application structure
 type App struct {
+	// baseUrl is the backend base URL
+	baseUrl string
+
 	// fyneApp is the main Fyne application instance
 	fyneApp fyne.App
 
@@ -85,6 +89,13 @@ type App struct {
 
 // NewApp initializes the main application structure
 func NewApp() *App {
+
+	// read flags for base URL override
+	var baseURLFlag = flag.String("base-url", "", "Override the default base URL")
+	flag.Parse()
+
+	baseURL := *baseURLFlag
+
 	ctx := context.Background()
 
 	a := app.New()
@@ -102,6 +113,10 @@ func NewApp() *App {
 	cli, err := client.LoginGetAuthenticatedClient(ctx)
 	if err != nil {
 		cli = client.New()
+	}
+
+	if baseURL != "" && baseURL != cli.GetBaseURL() {
+		cli = client.New().WithBaseURL(baseURL)
 	}
 
 	return &App{
