@@ -15,19 +15,45 @@ const connectionsFileName = "connections.json"
 // DeviceConnections represents active tunnels
 type DeviceConnections struct {
 	// Targets holds the list of active remote access targets
-	Targets []client.RemoteAccessTarget
-
+	Targets []client.RemoteAccessTarget `json:"targets"`
 	// Title is an optional title for the device
-	Title string
+	Title string `json:"title"`
+
+	// SSHUserName is the SSH username for the device
+	SSHUserName string `json:"ssh_user_name"`
 
 	// Cancel is the function to cancel active connections
-	Cancel func()
+	Cancel func() `json:"-"`
+}
+
+// default unmarshalling to handle old formats
+func (dc *DeviceConnections) UnmarshalJSON(data []byte) error {
+	// attempt to unmarshal new format
+	var aux struct {
+		Targets     []client.RemoteAccessTarget `json:"targets"`
+		Title       string                      `json:"title"`
+		SSHUserName string                      `json:"ssh_user_name"`
+	}
+	if err := json.Unmarshal(data, &aux); err == nil {
+		dc.Targets = aux.Targets
+		dc.Title = aux.Title
+		dc.SSHUserName = aux.SSHUserName
+		return nil
+	}
+
+	// attempt to unmarshal old format
+	var oldTargets []client.RemoteAccessTarget
+	if err := json.Unmarshal(data, &oldTargets); err != nil {
+		return err
+	}
+	dc.Targets = oldTargets
+	return nil
 }
 
 // ConnectionStore handles active memory state and persistent disk storage
 type ConnectionStore struct {
 	activeItems map[string]*DeviceConnections
-	savedItems  map[string][]client.RemoteAccessTarget
+	savedItems  map[string]*DeviceConnections
 	mutex       sync.Mutex
 	storage     fyne.Storage
 }
@@ -36,7 +62,7 @@ type ConnectionStore struct {
 func NewConnectionStore(s fyne.Storage) (*ConnectionStore, error) {
 	store := &ConnectionStore{
 		activeItems: make(map[string]*DeviceConnections),
-		savedItems:  make(map[string][]client.RemoteAccessTarget),
+		savedItems:  make(map[string]*DeviceConnections),
 		storage:     s,
 	}
 
@@ -69,7 +95,7 @@ func (cs *ConnectionStore) DeleteActive(deviceID string) {
 }
 
 // GetSaved retrieves saved connections from disk
-func (cs *ConnectionStore) GetSaved(deviceID string) ([]client.RemoteAccessTarget, bool) {
+func (cs *ConnectionStore) GetSaved(deviceID string) (*DeviceConnections, bool) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 	t, ok := cs.savedItems[deviceID]
@@ -77,9 +103,9 @@ func (cs *ConnectionStore) GetSaved(deviceID string) ([]client.RemoteAccessTarge
 }
 
 // SaveToDisk saves connections to disk
-func (cs *ConnectionStore) SaveToDisk(nodeID string, targets []client.RemoteAccessTarget) error {
+func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) error {
 	cs.mutex.Lock()
-	cs.savedItems[nodeID] = targets
+	cs.savedItems[nodeID] = conn
 	cs.mutex.Unlock() // Unlock before IO
 
 	var w fyne.URIWriteCloser

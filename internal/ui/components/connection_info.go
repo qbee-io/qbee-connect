@@ -40,7 +40,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 		for _, t := range targetInfo.Targets {
 			targetString := fmt.Sprintf("**%s**: %s:%s → %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
 
-			mappedPort := renderMappedPort(t)
+			mappedPort := renderMappedPort(t, targetInfo.SSHUserName)
 			openAction := getOpenURLButton(d, t)
 
 			copyToClipboardBtn := widget.NewButton("", func() {
@@ -83,14 +83,18 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 	return dialog
 }
 
-func renderMappedPort(t client.RemoteAccessTarget) string {
+func renderMappedPort(t client.RemoteAccessTarget, sshUser string) string {
 	if t.Protocol == "udp" {
 		return t.LocalPort
 	}
 
 	switch t.RemotePort {
 	case "22":
-		return "ssh -p " + t.LocalPort + " " + t.LocalHost
+		sshTarget := t.LocalHost
+		if sshUser != "" {
+			sshTarget = sshUser + "@" + t.LocalHost
+		}
+		return "ssh -p " + t.LocalPort + " " + sshTarget
 	case "3389":
 		return "mstsc /v:" + t.LocalHost + ":" + t.LocalPort
 	case "80", "443":
@@ -114,7 +118,7 @@ func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasOb
 	switch t.RemotePort {
 	case "80", "443":
 		openURL := widget.NewButton("", func() {
-			urlObj, err := url.Parse(renderMappedPort(t))
+			urlObj, err := url.Parse(renderMappedPort(t, ""))
 			if err != nil {
 				i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())
 				return
