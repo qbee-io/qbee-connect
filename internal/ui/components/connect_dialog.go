@@ -136,7 +136,9 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 			})
 		}()
 		if err := d.GetClient().Connect(ctx, device.NodeID, targets); err != nil {
-			d.DisplayError("Connection Error", err.Error())
+			fyne.Do(func() {
+				d.DisplayError("Connection Error", err.Error())
+			})
 		}
 	}()
 
