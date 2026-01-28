@@ -90,7 +90,11 @@ func renderMappedPort(t client.RemoteAccessTarget, sshUser string) string {
 
 	switch t.RemotePort {
 	case "22":
-		return "ssh -p " + t.LocalPort + " " + sshUser + "@" + t.LocalHost
+		sshTarget := t.LocalHost
+		if sshUser != "" {
+			sshTarget = sshUser + "@" + t.LocalHost
+		}
+		return "ssh -p " + t.LocalPort + " " + sshTarget
 	case "3389":
 		return "mstsc /v:" + t.LocalHost + ":" + t.LocalPort
 	case "80", "443":
