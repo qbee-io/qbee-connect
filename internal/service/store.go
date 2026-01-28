@@ -48,8 +48,6 @@ func (dc *DeviceConnections) UnmarshalJSON(data []byte) error {
 	}
 	dc.Targets = oldTargets
 	return nil
-	// handle old format with only targets slice
-
 }
 
 // ConnectionStore handles active memory state and persistent disk storage
