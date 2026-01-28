@@ -42,7 +42,6 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 
 	saved, exists := d.GetStore().GetSaved(device.NodeID)
 	if exists {
-		fmt.Printf("Loading saved connections for device %+v\n", saved)
 		for _, t := range saved.Targets {
 			addConnectRow(targetsContainer, formContent, &t)
 		}
