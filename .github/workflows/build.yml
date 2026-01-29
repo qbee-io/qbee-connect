@@ -5,11 +5,11 @@ permissions:
   id-token: write # needed for keyless signing
   attestations: write # needed for provenance
 
-
 on:
   push:
     tags:
       - '*'
+  pull_request:
 
 jobs:
   build:
@@ -98,6 +98,7 @@ jobs:
           retention-days: 7
 
   build-artifacts-linux-windows:
+    if: github.event_name != 'pull_request'
     name: Build installers non-MacOS
     needs: build
     runs-on: ubuntu-24.04
@@ -138,6 +139,7 @@ jobs:
           retention-days: 7
 
   build-artifacts-macos:
+    if: github.event_name != 'pull_request'
     name: Build installers MacOS
     needs: build
     runs-on: macos-14
