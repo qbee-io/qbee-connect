@@ -76,16 +76,24 @@ jobs:
           echo "CGO_ENABLED=1" >> $GITHUB_ENV
           echo "CC=${{ matrix.cc }}" >> $GITHUB_ENV
 
+      - name: Extract version
+        id: extract_version
+        run: |
+          REF_NAME=${GITHUB_REF_NAME}
+          SHA_SHORT="${GITHUB_SHA:0:7}"
+          
+          QBEE_CONNECT_VERSION="0.0.0~${SHA_SHORT}"
+          if [[ "${GITHUB_REF}" == "refs/tags/"* ]]; then
+            QBEE_CONNECT_VERSION=$REF_NAME
+          fi
+          echo "Version = \"${QBEE_CONNECT_VERSION}\"" >> ./cmd/qbee-connect/FyneApp.toml
+          echo "Build = ${{ github.run_number }}" >> ./cmd/qbee-connect/FyneApp.toml
+          
+          cat ./cmd/qbee-connect/FyneApp.toml
+
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
-          # echo "Version = ${{ github.ref_name }}" >> ./cmd/qbee-connect/FyneApp.toml
-          # echo "Build = ${{ github.run_number }}" >> ./cmd/qbee-connect/FyneApp.toml
-
-          pwd
-          ls -ltR .
-          cat ./cmd/qbee-connect/FyneApp.toml
-
           GOARCH=${{ matrix.arch }} fyne build \
             --release \
             --target ${{ matrix.target }} \
