@@ -36,9 +36,18 @@ func MakeMenu() *fyne.MainMenu {
 	return fyne.NewMainMenu(mainMenu)
 }
 
+const docsUrl = "https://docs.qbee.io/qbee-connect.html"
+const supportEmail = "support@qbee.io"
+
 var aboutText = `**qbee-connect**
 
 Version: {{.Version}}
+
+Build: {{.Build}}
+
+Docs: [{{.DocURL}}]({{.DocURL}})
+
+Support: [{{.Email}}](mailto:{{.Email}})
 
 © {{.Year}} qbee.io
 `
@@ -47,10 +56,24 @@ func newAbout() fyne.CanvasObject {
 
 	templateData := struct {
 		Version string
+		Build   int
 		Year    int
+		DocURL  string
+		Email   string
 	}{
 		Version: fyne.CurrentApp().Metadata().Version,
+		Build:   fyne.CurrentApp().Metadata().Build,
 		Year:    time.Now().Year(),
+		DocURL:  docsUrl,
+		Email:   supportEmail,
+	}
+
+	if templateData.Version == "" {
+		templateData.Version = "development"
+	}
+
+	if templateData.Build == 0 {
+		templateData.Build = -1
 	}
 
 	tmpl, err := template.New("about").Parse(aboutText)

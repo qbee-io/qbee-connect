@@ -54,7 +54,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: stable
-          cache: false # We are using custom caching below
+          cache: false # We are using custom caching below because cache key depends on target and arch, not go.sum, go.mod, go version and OS.
 
       - name: Setup Golang caches
         uses: actions/cache@v4
@@ -79,6 +79,9 @@ jobs:
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
+          echo "Version=${{ github.ref_name }}" >> cmd/qbee-connect/FyneApp.toml 
+          echo "Build=${{ github.run_number }}" >> cmd/qbee-connect/FyneApp.toml
+
           GOARCH=${{ matrix.arch }} fyne build \
             --release \
             --target ${{ matrix.target }} \
