@@ -1,5 +1,4 @@
 [Details]
-Icon = "internal/ui/qbee-connect-icon.png"
+Icon = "../../internal/ui/qbee-connect-icon.png"
 Name = "qbee-connect"
 ID = "io.qbee.qbee-connect"
-Build = 6

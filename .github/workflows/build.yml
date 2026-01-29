@@ -5,11 +5,11 @@ permissions:
   id-token: write # needed for keyless signing
   attestations: write # needed for provenance
 
-
 on:
   push:
     tags:
       - '*'
+  pull_request:
 
 jobs:
   build:
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: stable
-          cache: false # We are using custom caching below
+          cache: false # We are using custom caching below because cache key depends on target and arch, not go.sum, go.mod, go version and OS.
 
       - name: Setup Golang caches
         uses: actions/cache@v4
@@ -76,6 +76,19 @@ jobs:
           echo "CGO_ENABLED=1" >> $GITHUB_ENV
           echo "CC=${{ matrix.cc }}" >> $GITHUB_ENV
 
+      - name: Extract version
+        id: extract_version
+        run: |
+          REF_NAME=${GITHUB_REF_NAME}
+          SHA_SHORT="${GITHUB_SHA:0:7}"
+          
+          QBEE_CONNECT_VERSION="0.0.0~${SHA_SHORT}"
+          if [[ "${GITHUB_REF}" == "refs/tags/"* ]]; then
+            QBEE_CONNECT_VERSION=$REF_NAME
+          fi
+          echo "Version = \"${QBEE_CONNECT_VERSION}\"" >> ./cmd/qbee-connect/FyneApp.toml
+          echo "Build = ${{ github.run_number }}" >> ./cmd/qbee-connect/FyneApp.toml
+          
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
@@ -95,6 +108,7 @@ jobs:
           retention-days: 7
 
   build-artifacts-linux-windows:
+    if: github.event_name != 'pull_request'
     name: Build installers non-MacOS
     needs: build
     runs-on: ubuntu-24.04
@@ -135,6 +149,7 @@ jobs:
           retention-days: 7
 
   build-artifacts-macos:
+    if: github.event_name != 'pull_request'
     name: Build installers MacOS
     needs: build
     runs-on: macos-14
