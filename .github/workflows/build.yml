@@ -79,8 +79,8 @@ jobs:
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
-          echo "Version = ${{ github.ref_name }}" >> ./cmd/qbee-connect/FyneApp.toml
-          echo "Build = ${{ github.run_number }}" >> ./cmd/qbee-connect/FyneApp.toml
+          # echo "Version = ${{ github.ref_name }}" >> ./cmd/qbee-connect/FyneApp.toml
+          # echo "Build = ${{ github.run_number }}" >> ./cmd/qbee-connect/FyneApp.toml
 
           pwd
           ls -ltR .
