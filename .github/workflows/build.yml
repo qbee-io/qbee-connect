@@ -89,8 +89,6 @@ jobs:
           echo "Version = \"${QBEE_CONNECT_VERSION}\"" >> ./cmd/qbee-connect/FyneApp.toml
           echo "Build = ${{ github.run_number }}" >> ./cmd/qbee-connect/FyneApp.toml
           
-          cat ./cmd/qbee-connect/FyneApp.toml
-
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
         run: |
