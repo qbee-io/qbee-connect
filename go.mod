@@ -1,11 +1,11 @@
 module go.qbee.io/connect
 
-go 1.25.5
+go 1.25.6
 
 require (
 	fyne.io/fyne/v2 v2.7.2
 	fyne.io/x/fyne v0.0.0-20251214153509-fa68a7d234d5
-	go.qbee.io/client v1.2026.4
+	go.qbee.io/client v1.2026.5
 )
 
 require (
@@ -34,7 +34,7 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
-	github.com/xtaci/smux v1.5.50 // indirect
+	github.com/xtaci/smux v1.5.55 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
 	go.qbee.io/transport v1.25.28 // indirect
 	golang.org/x/image v0.24.0 // indirect
