@@ -63,7 +63,6 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 		saveAndConnect(d, device, targetsContainer, dialog)
 	})
 
-	// input for ssh user that should be displayed in the footer. Do not truncate entry
 	footer := container.NewHBox(
 		layout.NewSpacer(),
 		connectBtn,
