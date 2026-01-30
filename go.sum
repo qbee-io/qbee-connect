@@ -64,12 +64,12 @@ github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef h1:Ch6Q+AZUxDBCVqd
 github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef/go.mod h1:nXTWP6+gD5+LUJ8krVhhoeHjvHTutPxMYl5SvkcnJNE=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/xtaci/smux v1.5.50 h1:y/1DlWQC9bnMeZzsyk4oL2hbLK6uVk4BKTz5BeQqUEA=
-github.com/xtaci/smux v1.5.50/go.mod h1:IGQ9QYrBphmb/4aTnLEcJby0TNr3NV+OslIOMrX825Q=
+github.com/xtaci/smux v1.5.55 h1:BdOj0tHZmiZOeZ8VQaOKpBcuL2MIMed5Ubhn5G3xDlo=
+github.com/xtaci/smux v1.5.55/go.mod h1:IGQ9QYrBphmb/4aTnLEcJby0TNr3NV+OslIOMrX825Q=
 github.com/yuin/goldmark v1.7.8 h1:iERMLn0/QJeHFhxSt3p6PeN9mGnvIKSpG9YYorDMnic=
 github.com/yuin/goldmark v1.7.8/go.mod h1:uzxRWxtg69N339t3louHJ7+O03ezfj6PlliRlaOzY1E=
-go.qbee.io/client v1.2026.4 h1:VMQygbCvKnty3E0EbZGej9Ez6tgZgZHFEJ+LcQv43LI=
-go.qbee.io/client v1.2026.4/go.mod h1:Ef4HlN4BuVYo1ZwH/mu3qAU1zMIoH5D1NjK+uK6bgzM=
+go.qbee.io/client v1.2026.5 h1:dFMrnya/ByZ2sx8HIY1x2u04pVf89p3WwRm2gODpVa0=
+go.qbee.io/client v1.2026.5/go.mod h1:1Qg0pJmEKrRBxkdX5xoh+F67T7grLj4IcRSucXrXpv4=
 go.qbee.io/transport v1.25.28 h1:S6X91ORNaRrPsNn3x80gQWAnX4jIyVXG76R8u6dLkKw=
 go.qbee.io/transport v1.25.28/go.mod h1:SBtAKI5/BjXrXYGRDT04gSjyZxQiuvRApSDeFWeelh4=
 golang.org/x/image v0.24.0 h1:AN7zRgVsbvmTfNyqIbbOraYL8mSwcKncEj8ofjgzcMQ=
