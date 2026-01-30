@@ -19,9 +19,6 @@ type DeviceConnections struct {
 	// Title is an optional title for the device
 	Title string `json:"title"`
 
-	// SSHUserName is the SSH username for the device
-	SSHUserName string `json:"ssh_user_name"`
-
 	// Cancel is the function to cancel active connections
 	Cancel func() `json:"-"`
 }
@@ -30,14 +27,12 @@ type DeviceConnections struct {
 func (dc *DeviceConnections) UnmarshalJSON(data []byte) error {
 	// attempt to unmarshal new format
 	var aux struct {
-		Targets     []client.RemoteAccessTarget `json:"targets"`
-		Title       string                      `json:"title"`
-		SSHUserName string                      `json:"ssh_user_name"`
+		Targets []client.RemoteAccessTarget `json:"targets"`
+		Title   string                      `json:"title"`
 	}
 	if err := json.Unmarshal(data, &aux); err == nil {
 		dc.Targets = aux.Targets
 		dc.Title = aux.Title
-		dc.SSHUserName = aux.SSHUserName
 		return nil
 	}
 
