@@ -22,8 +22,6 @@ type connectDelegate interface {
 	DisplayError(title, msg string)
 }
 
-const defaultSSHUserName = "root"
-
 // NewConnectDialog creates a new connection configuration dialog
 func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widget.PopUp {
 	targetsContainer := container.NewVBox(
@@ -61,28 +59,12 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 
 	// Declare dialog variable first so we can close it inside the callback
 	var dialog *widget.PopUp
-
-	sshUserEntry := widget.NewEntry()
-	sshUserEntry.SetPlaceHolder("SSH User")
-	if exists && saved.SSHUserName != "" {
-		sshUserEntry.SetText(saved.SSHUserName)
-	} else {
-		sshUserEntry.SetText(defaultSSHUserName)
-	}
-
-	// Wrap the entry in a container with fixed size to prevent truncation
-	sshUserContainer := container.NewWithoutLayout(sshUserEntry)
-	sshUserContainer.Resize(fyne.NewSize(150, sshUserEntry.MinSize().Height))
-	sshUserEntry.Resize(fyne.NewSize(150, sshUserEntry.MinSize().Height))
-
 	connectBtn := widget.NewButton("Save & Connect", func() {
-		saveAndConnect(d, device, targetsContainer, dialog, sshUserEntry.Text)
+		saveAndConnect(d, device, targetsContainer, dialog)
 	})
 
 	// input for ssh user that should be displayed in the footer. Do not truncate entry
 	footer := container.NewHBox(
-		widget.NewLabel("SSH User:"),
-		sshUserContainer,
 		layout.NewSpacer(),
 		connectBtn,
 		widget.NewButton("Cancel", func() { dialog.Hide() }),
@@ -100,7 +82,7 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 	return dialog
 }
 
-func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targetsContainer *fyne.Container, dialog *widget.PopUp, sshUser string) {
+func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targetsContainer *fyne.Container, dialog *widget.PopUp) {
 	var targets []client.RemoteAccessTarget
 	for rowIndex, obj := range targetsContainer.Objects {
 		// Skip the header row
@@ -120,10 +102,9 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 
 	ctx, cancel := context.WithCancel(d.GetContext())
 	d.GetStore().SetActive(device.NodeID, &service.DeviceConnections{
-		Title:       device.Title,
-		Targets:     targets,
-		SSHUserName: sshUser,
-		Cancel:      cancel,
+		Title:   device.Title,
+		Targets: targets,
+		Cancel:  cancel,
 	})
 
 	go func() {
@@ -142,9 +123,8 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	}()
 
 	err := d.GetStore().SaveToDisk(device.NodeID, &service.DeviceConnections{
-		Title:       device.Title,
-		Targets:     targets,
-		SSHUserName: sshUser,
+		Title:   device.Title,
+		Targets: targets,
 	})
 	if err != nil {
 		d.DisplayError("Save Error", err.Error())
