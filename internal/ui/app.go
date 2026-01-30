@@ -186,9 +186,7 @@ func (app *App) Run() {
 	})
 	setItemsPerPage.SetSelected("10")
 
-	app.accountSwitcher = container.NewHBox(
-		widget.NewLabel("Account:"),
-	)
+	app.accountSwitcher = container.NewHBox()
 
 	pagination := container.NewHBox(
 		app.accountSwitcher,
@@ -385,6 +383,11 @@ func (app *App) SetLoggedIn() error {
 		return err
 	}
 	app.user = user
+
+	if len(app.user.Accounts) < 2 {
+		// No account switcher needed
+		return nil
+	}
 
 	accountMap := make(map[string]string)
 	accountSelector := make([]string, 0)
