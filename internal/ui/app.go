@@ -24,6 +24,7 @@ import (
 	"go.qbee.io/connect/internal/service"
 	"go.qbee.io/connect/internal/ui/components"
 	"go.qbee.io/connect/internal/ui/layouts"
+	"go.qbee.io/connect/internal/ui/widgets"
 )
 
 //go:embed qbee-connect-icon.png
@@ -187,6 +188,21 @@ func (app *App) Run() {
 	setItemsPerPage.SetSelected("10")
 
 	app.accountSwitcher = container.NewHBox()
+	prevButton := widgets.NewButtonPointer("", func() {
+		if app.deviceModel.CurrentPage > 0 {
+			app.deviceModel.CurrentPage--
+			app.RefreshUI()
+		}
+	})
+	prevButton.SetIcon(theme.NavigateBackIcon())
+
+	nextButton := widgets.NewButtonPointer("", func() {
+		if app.deviceModel.CurrentPage < app.deviceModel.TotalPages()-1 {
+			app.deviceModel.CurrentPage++
+			app.RefreshUI()
+		}
+	})
+	nextButton.SetIcon(theme.NavigateNextIcon())
 
 	pagination := container.NewHBox(
 		app.accountSwitcher,
@@ -194,19 +210,9 @@ func (app *App) Run() {
 		widget.NewLabel("Items per page:"),
 		setItemsPerPage,
 		filterActive,
-		widget.NewButtonWithIcon("", theme.NavigateBackIcon(), func() {
-			if app.deviceModel.CurrentPage > 0 {
-				app.deviceModel.CurrentPage--
-				app.RefreshUI()
-			}
-		}),
+		prevButton,
 		app.pageInfoLabel,
-		widget.NewButtonWithIcon("", theme.NavigateNextIcon(), func() {
-			if app.deviceModel.CurrentPage < app.deviceModel.TotalPages()-1 {
-				app.deviceModel.CurrentPage++
-				app.RefreshUI()
-			}
-		}),
+		nextButton,
 	)
 
 	if err := app.SetLoggedIn(); err != nil {
@@ -279,7 +285,7 @@ func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 	}
 
 	if app.user == nil {
-		loginBtn := widget.NewButton("Log In", func() {
+		loginBtn := widgets.NewButtonPointer("Log In", func() {
 			components.NewLoginDialog(app)
 		})
 		loginContainer := container.NewCenter(loginBtn)

@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"go.qbee.io/connect/internal/service"
+	"go.qbee.io/connect/internal/ui/widgets"
 )
 
 // activeConnectionsDelegate defines the interface for accessing the ConnectionStore
@@ -55,7 +56,7 @@ func UpdateActiveConnectionsView(a activeConnectionsDelegate, activeView fyne.Ca
 		mdWidget := widget.NewRichTextFromMarkdown(md)
 
 		devID := id
-		btn := widget.NewButton("Disconnect", func() {
+		btn := widgets.NewButtonPointer("Disconnect", func() {
 			activeConn, ok := a.GetStore().GetActive(devID)
 			if ok && activeConn.Cancel != nil {
 				activeConn.Cancel()

@@ -155,7 +155,7 @@ func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item clie
 		return
 	}
 
-	button := widget.NewButton("", nil)
+	button := widgets.NewButtonPointer("", nil)
 	text := fmt.Sprintf("%d active", connectionCount)
 	label := widget.NewLabel(text)
 
@@ -192,7 +192,9 @@ func updateActionCell(d tableDelegate, cell *fyne.Container, item client.Invento
 	}
 
 	cell.RemoveAll()
-	btn := widget.NewButtonWithIcon("", icon, tapped)
+
+	btn := widgets.NewButtonPointer("", tapped)
+	btn.SetIcon(icon)
 	cell.Add(btn)
 }
 

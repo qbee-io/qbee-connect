@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"go.qbee.io/client"
+	"go.qbee.io/connect/internal/ui/widgets"
 
 	xwidget "fyne.io/x/fyne/widget"
 )
@@ -52,9 +53,10 @@ func NewSearchBar(d searchBarDelegate) *fyne.Container {
 	})
 	searchSelect.SetSelected(searchDeviceName)
 
-	refreshBtn := widget.NewButtonWithIcon("Refresh", theme.ViewRefreshIcon(), func() {
+	refreshBtn := widgets.NewButtonPointer("Refresh", func() {
 		d.RefreshUI()
 	})
+	refreshBtn.SetIcon(theme.ViewRefreshIcon())
 
 	return container.NewBorder(nil, nil, nil, container.NewHBox(searchSelect, refreshBtn), searchEntry)
 }

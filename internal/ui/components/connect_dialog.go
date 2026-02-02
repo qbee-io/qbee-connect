@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"go.qbee.io/client"
 	"go.qbee.io/connect/internal/service"
+	"go.qbee.io/connect/internal/ui/widgets"
 )
 
 // connectDelegate defines the methods required by the connect dialog
@@ -46,9 +47,10 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 		addConnectRow(targetsContainer, formContent, nil)
 	}
 
-	addBtn := widget.NewButtonWithIcon("Add Target", theme.ContentAddIcon(), func() {
+	addBtn := widgets.NewButtonPointer("Add Target", func() {
 		addConnectRow(targetsContainer, formContent, nil)
 	})
+	addBtn.SetIcon(theme.ContentAddIcon())
 
 	content := container.NewVBox(
 		widget.NewLabel("Configure port forwarding: "+device.Title),
@@ -59,14 +61,14 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 
 	// Declare dialog variable first so we can close it inside the callback
 	var dialog *widget.PopUp
-	connectBtn := widget.NewButton("Save & Connect", func() {
+	connectBtn := widgets.NewButtonPointer("Save & Connect", func() {
 		saveAndConnect(d, device, targetsContainer, dialog)
 	})
 
 	footer := container.NewHBox(
 		layout.NewSpacer(),
 		connectBtn,
-		widget.NewButton("Cancel", func() { dialog.Hide() }),
+		widgets.NewButtonPointer("Cancel", func() { dialog.Hide() }),
 	)
 
 	dialogContent := container.NewBorder(
@@ -191,8 +193,9 @@ func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.Remo
 		// trigger port selector to set initial state
 		portSelector.SetSelected(servicePortNames[0])
 	}
+	rmBtn := widgets.NewButtonPointer("", nil)
+	rmBtn.SetIcon(theme.DeleteIcon())
 
-	rmBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
 	row := container.NewGridWithColumns(7, lp, la, portSelector, rp, ra, proto, rmBtn)
 
 	rmBtn.OnTapped = func() {
