@@ -117,6 +117,13 @@ func NewApp() *App {
 		cli = client.New().WithBaseURL(baseURL)
 	}
 
+	version := a.Metadata().Version
+	if version == "" {
+		version = "0.0.0-dev"
+	}
+
+	client.UserAgent = fmt.Sprintf("qbee-connect/%s", version)
+
 	return &App{
 		fyneApp:       a,
 		mainWin:       w,
