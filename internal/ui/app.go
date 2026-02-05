@@ -26,7 +26,7 @@ import (
 	"go.qbee.io/connect/internal/ui/layouts"
 )
 
-//go:embed qbee-connect-icon.png
+//go:embed qbee-connect.png
 var trayIcon []byte
 
 const (

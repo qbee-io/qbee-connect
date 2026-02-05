@@ -30,6 +30,23 @@ source:
 archives:
    - formats: [ 'tar.gz' ]
 
+nfpms:
+    - vendor: qbee AS
+      homepage: https://qbee.io/
+      maintainer: The Qbee Team <support@qbee.io>
+      license: Apache-2.0
+
+      description: Qbee Connect Desktop Utility
+
+      file_name_template: "{{- .ConventionalFileName -}}"
+
+      priority: extra
+      section: default
+
+      formats:
+        - deb
+        - rpm
+
 msi:
   - name: "{{ .ProjectName }}_{{ .Version }}_{{ .MsiArch }}"
     wxs: ./windows/qbee-connect.wks

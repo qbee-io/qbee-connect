@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Qbee Connect
+Comment=The Qbee Connect Desktop Utility
+GenericName=Qbee Connect
+Exec=qbee-connect
+Icon=qbee-connect
+Categories=GNOME;GTK;Utility;
+
