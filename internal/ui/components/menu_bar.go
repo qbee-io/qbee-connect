@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"go.qbee.io/connect/internal/config"
 )
 
 // MakeMenu constructs the main application menu
@@ -69,7 +70,7 @@ func newAbout() fyne.CanvasObject {
 	}
 
 	if templateData.Version == "" {
-		templateData.Version = "development"
+		templateData.Version = config.DefaultVersion
 	}
 
 	if templateData.Build == 0 {

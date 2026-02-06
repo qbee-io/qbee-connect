@@ -20,6 +20,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"go.qbee.io/client"
+	"go.qbee.io/connect/internal/config"
 	"go.qbee.io/connect/internal/model"
 	"go.qbee.io/connect/internal/service"
 	"go.qbee.io/connect/internal/ui/components"
@@ -119,7 +120,7 @@ func NewApp() *App {
 
 	version := a.Metadata().Version
 	if version == "" {
-		version = "0.0.0-dev"
+		version = config.DefaultVersion
 	}
 
 	client.UserAgent = fmt.Sprintf("qbee-connect/%s", version)
