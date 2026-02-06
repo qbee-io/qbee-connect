@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"runtime"
 	"sort"
 	"sync/atomic"
 
@@ -123,7 +124,7 @@ func NewApp() *App {
 		version = config.DefaultVersion
 	}
 
-	client.UserAgent = fmt.Sprintf("qbee-connect/%s", version)
+	client.UserAgent = fmt.Sprintf("qbee-connect/%s (%s/%s)", version, runtime.GOOS, runtime.GOARCH)
 
 	return &App{
 		fyneApp:       a,
