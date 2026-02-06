@@ -69,7 +69,7 @@ func newAbout() fyne.CanvasObject {
 	}
 
 	if templateData.Version == "" {
-		templateData.Version = "0.0.0-dev"
+		templateData.Version = "development"
 	}
 
 	if templateData.Build == 0 {
