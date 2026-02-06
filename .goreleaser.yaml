@@ -10,7 +10,7 @@ builds:
 
     prebuilt:
       path: output/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ .ProjectName }}
-    binary: bin/{{ .ProjectName }}
+    binary: "{{ .ProjectName }}"
 
 gomod:
   proxy: true
@@ -46,6 +46,39 @@ nfpms:
       formats:
         - deb
         - rpm
+
+      dependencies:
+        - libgl1
+        - libxcursor1
+        - libxi6
+        - libxinerama1
+        - libxrandr2
+        - libxxf86vm1
+
+      overrides:
+        rpm:
+          dependencies:
+            - mesa-libGL
+            - libXcursor
+            - libXi
+            - libXinerama
+            - libXrandr
+            - libXxf86vm
+
+      contents:
+        - src: linux/qbee-connect.desktop
+          dst: /usr/share/applications/qbee-connect.desktop
+          file_info:
+            mode: 644
+            owner: root
+            group: root
+
+        - src: internal/ui/qbee-connect.png
+          dst: /usr/share/pixmaps/qbee-connect.png
+          file_info:
+            mode: 644
+            owner: root
+            group: root
 
 msi:
   - name: "{{ .ProjectName }}_{{ .Version }}_{{ .MsiArch }}"
