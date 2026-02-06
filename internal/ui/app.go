@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"runtime"
 	"sort"
 	"sync/atomic"
 
@@ -20,6 +21,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"go.qbee.io/client"
+	"go.qbee.io/connect/internal/config"
 	"go.qbee.io/connect/internal/model"
 	"go.qbee.io/connect/internal/service"
 	"go.qbee.io/connect/internal/ui/components"
@@ -116,6 +118,13 @@ func NewApp() *App {
 	if baseURL != "" && baseURL != cli.GetBaseURL() {
 		cli = client.New().WithBaseURL(baseURL)
 	}
+
+	version := a.Metadata().Version
+	if version == "" {
+		version = config.DefaultVersion
+	}
+
+	client.UserAgent = fmt.Sprintf("qbee-connect/%s (%s/%s)", version, runtime.GOOS, runtime.GOARCH)
 
 	return &App{
 		fyneApp:       a,
