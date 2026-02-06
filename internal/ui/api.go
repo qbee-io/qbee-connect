@@ -52,7 +52,15 @@ const userDataPath = "/api/v2/user?accounts=true"
 // GetUser returns data about the authenticated user
 func (app *App) GetUser() (*model.User, error) {
 	var user model.User
-	err := app.cli.Call(app.ctx, http.MethodGet, userDataPath, nil, &user)
+	var err error
+	app.AuthenticatedRequest(func() error {
+		err = app.cli.Call(app.ctx, http.MethodGet, userDataPath, nil, &user)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
