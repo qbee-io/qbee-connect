@@ -6,11 +6,13 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"go.qbee.io/client"
 	"go.qbee.io/connect/internal/model"
 	"go.qbee.io/connect/internal/service"
+	"go.qbee.io/connect/internal/ui/widgets"
 )
 
 // tableDelegate defines the methods required by the device table
@@ -50,13 +52,12 @@ func NewDeviceTable(d tableDelegate) *widget.Table {
 			return container.NewStack()
 		},
 		func(id widget.TableCellID, obj fyne.CanvasObject) {
-
 			updateCell(d, id, obj)
 		},
 	)
 
 	table.ShowHeaderRow = true
-	table.CreateHeader = func() fyne.CanvasObject { return widget.NewButton("", nil) }
+	table.CreateHeader = func() fyne.CanvasObject { return widgets.NewButtonPointer("", nil) }
 	table.UpdateHeader = func(id widget.TableCellID, obj fyne.CanvasObject) {
 		updateHeader(d, id, obj)
 	}
@@ -80,7 +81,7 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 	// Data Columns
 	switch id.Col {
 	case 0:
-		updateTitleCell(cell, item)
+		updateTitleCell(d, cell, item)
 	case 1:
 		updateStatusCell(cell, item)
 	case 2: // Connection Info Column
@@ -95,8 +96,18 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 }
 
 // updateTitleCell updates the title cell with the device's name
-func updateTitleCell(cell *fyne.Container, item client.InventoryListItem) {
-	updateLabelCell(cell, item.Title)
+func updateTitleCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
+	cell.RemoveAll()
+	titleLable := widgets.NewClickableLabel(item.Title, func() {
+		// check if item has active connections
+		if _, ok := d.GetStore().GetActive(item.NodeID); ok {
+			d.ShowInfoDialog(&item)
+		} else {
+			d.ShowConnectDialog(&item)
+		}
+	})
+	titleLable.Truncation = fyne.TextTruncateEllipsis
+	cell.Add(titleLable)
 }
 
 // updateStatusCell updates the status cell with the device's online/offline status
@@ -144,7 +155,7 @@ func updateConnectionStatusCell(d tableDelegate, cell *fyne.Container, item clie
 		return
 	}
 
-	button := widget.NewButton("", nil)
+	button := widgets.NewButtonPointer("", nil)
 	text := fmt.Sprintf("%d active", connectionCount)
 	label := widget.NewLabel(text)
 
@@ -181,7 +192,9 @@ func updateActionCell(d tableDelegate, cell *fyne.Container, item client.Invento
 	}
 
 	cell.RemoveAll()
-	btn := widget.NewButtonWithIcon("", icon, tapped)
+
+	btn := widgets.NewButtonPointer("", tapped)
+	btn.SetIcon(icon)
 	cell.Add(btn)
 }
 
@@ -193,7 +206,7 @@ func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject)
 	if id.Col >= len(model.DeviceColumns) {
 		return
 	}
-	btn := obj.(*widget.Button)
+	btn := obj.(*widgets.ButtonPointer)
 	col := model.DeviceColumns[id.Col]
 
 	if col.Title == "" {
@@ -203,30 +216,33 @@ func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject)
 	btn.Show()
 	btn.SetText(col.Title)
 
-	if col.Sortable {
-		q := d.GetDeviceModel().Query
+	if !col.Sortable {
+		btn.SetCursor(desktop.DefaultCursor)
+		return
+	}
+
+	q := d.GetDeviceModel().Query
+	if q.SortField == col.SortKey {
+		if q.SortDirection == client.SortDirectionAsc {
+			btn.SetIcon(theme.MoveUpIcon())
+		} else {
+			btn.SetIcon(theme.MoveDownIcon())
+		}
+	} else {
+		btn.SetIcon(nil)
+	}
+	btn.OnTapped = func() {
 		if q.SortField == col.SortKey {
 			if q.SortDirection == client.SortDirectionAsc {
-				btn.SetIcon(theme.MoveUpIcon())
+				q.SortDirection = client.SortDirectionDesc
 			} else {
-				btn.SetIcon(theme.MoveDownIcon())
-			}
-		} else {
-			btn.SetIcon(nil)
-		}
-		btn.OnTapped = func() {
-			if q.SortField == col.SortKey {
-				if q.SortDirection == client.SortDirectionAsc {
-					q.SortDirection = client.SortDirectionDesc
-				} else {
-					q.SortDirection = client.SortDirectionAsc
-				}
-			} else {
-				q.SortField = col.SortKey
 				q.SortDirection = client.SortDirectionAsc
 			}
-			d.RefreshUI()
+		} else {
+			q.SortField = col.SortKey
+			q.SortDirection = client.SortDirectionAsc
 		}
+		d.RefreshUI()
 	}
 }
 

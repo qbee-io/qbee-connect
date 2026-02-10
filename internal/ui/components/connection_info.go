@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"go.qbee.io/client"
 	"go.qbee.io/connect/internal/service"
+	"go.qbee.io/connect/internal/ui/widgets"
 )
 
 type infoDelegate interface {
@@ -43,7 +44,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 			mappedPort := renderMappedPort(t)
 			openAction := getOpenURLButton(d, t)
 
-			copyToClipboardBtn := widget.NewButton("", func() {
+			copyToClipboardBtn := widgets.NewButtonPointer("", func() {
 				d.GetFyneApp().Clipboard().SetContent(mappedPort)
 			})
 			copyToClipboardBtn.SetIcon(theme.ContentCopyIcon())
@@ -68,7 +69,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 
 	footer := container.NewHBox(
 		layout.NewSpacer(),
-		widget.NewButton("Close", func() { dialog.Hide() }),
+		widgets.NewButtonPointer("Close", func() { dialog.Hide() }),
 	)
 
 	dialogContent := container.NewBorder(
@@ -113,7 +114,7 @@ func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasOb
 
 	switch t.RemotePort {
 	case "80", "443":
-		openURL := widget.NewButton("", func() {
+		openURL := widgets.NewButtonPointer("", func() {
 			urlObj, err := url.Parse(renderMappedPort(t))
 			if err != nil {
 				i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())

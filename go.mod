@@ -4,7 +4,7 @@ go 1.25.6
 
 require (
 	fyne.io/fyne/v2 v2.7.2
-	fyne.io/x/fyne v0.0.0-20251214153509-fa68a7d234d5
+	fyne.io/x/fyne v0.0.0-20260128204654-7fd4ce591d29
 	go.qbee.io/client v1.2026.5
 )
 
