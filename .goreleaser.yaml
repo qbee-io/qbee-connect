@@ -69,14 +69,14 @@ nfpms:
         - src: linux/qbee-connect.desktop
           dst: /usr/share/applications/qbee-connect.desktop
           file_info:
-            mode: 644
+            mode: 0644
             owner: root
             group: root
 
         - src: internal/ui/qbee-connect.png
           dst: /usr/share/pixmaps/qbee-connect.png
           file_info:
-            mode: 644
+            mode: 0644
             owner: root
             group: root
 
