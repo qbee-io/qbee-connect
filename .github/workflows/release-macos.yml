@@ -61,6 +61,8 @@ jobs:
         run: bash ./darwin/create-signed-dmg.sh Qbee-Connect_${{ matrix.arch }}.dmg
 
       - name: Upload DMG to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: gh release upload ${{ github.ref_name }} Qbee-Connect_${{ matrix.arch }}.dmg --clobber
 
       
