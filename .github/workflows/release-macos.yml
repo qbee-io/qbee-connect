@@ -12,7 +12,7 @@ on:
 jobs:
   release:
     name: Build, notarize and release artifacts
-    runs-on: macos-15
+    runs-on: macos-26
     strategy:
       matrix:
         arch: [amd64, arm64]
