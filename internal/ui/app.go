@@ -29,9 +29,6 @@ import (
 	"go.qbee.io/connect/internal/ui/widgets"
 )
 
-//go:embed qbee-connect.png
-var trayIcon []byte
-
 const (
 	defaultWindowWidth  = 945
 	defaultWindowHeight = 600
@@ -86,10 +83,13 @@ type App struct {
 
 	// userData
 	user *model.User
+
+	// icon contains the application icon data
+	icon []byte
 }
 
 // NewApp initializes the main application structure
-func NewApp() *App {
+func NewApp(icon []byte) *App {
 
 	// read flags for base URL override
 	var baseURLFlag = flag.String("base-url", "", "Override the default base URL")
@@ -102,8 +102,8 @@ func NewApp() *App {
 	a := app.New()
 	w := a.NewWindow("qbee-connect - qbee.io")
 
-	if len(trayIcon) > 0 {
-		w.SetIcon(fyne.NewStaticResource("icon", trayIcon))
+	if len(icon) > 0 {
+		w.SetIcon(fyne.NewStaticResource("icon", icon))
 	}
 
 	store, err := service.NewConnectionStore(a.Storage())
@@ -135,6 +135,7 @@ func NewApp() *App {
 		store:         store,
 		deviceModel:   model.NewDeviceModel(),
 		pageInfoLabel: widget.NewLabel("Page 1 / 1"),
+		icon:          icon,
 	}
 }
 
@@ -364,12 +365,12 @@ func (app *App) RedrawDeviceList() {
 
 // MakeTray creates a system tray icon with menu
 func (app *App) MakeTray() {
-	if desk, ok := app.fyneApp.(desktop.App); ok && len(trayIcon) > 0 {
+	if desk, ok := app.fyneApp.(desktop.App); ok && len(app.icon) > 0 {
 		menu := fyne.NewMenu("qbee-connect",
 			fyne.NewMenuItem("Show", func() { app.mainWin.Show() }),
 			fyne.NewMenuItem("Quit", func() { app.fyneApp.Quit() }),
 		)
-		desk.SetSystemTrayIcon(fyne.NewStaticResource("icon", trayIcon))
+		desk.SetSystemTrayIcon(fyne.NewStaticResource("icon", app.icon))
 		desk.SetSystemTrayMenu(menu)
 	}
 }

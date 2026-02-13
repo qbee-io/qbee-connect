@@ -6,10 +6,8 @@ permissions:
   attestations: write # needed for provenance
 
 on:
-  push:
-    tags:
-      - '*'
-  pull_request:
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -25,12 +23,6 @@ jobs:
           - os: ubuntu-24.04
             arch: amd64
             target: linux
-          - os: macos-14
-            arch: amd64
-            target: darwin
-          - os: macos-14
-            arch: arm64
-            target: darwin
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -40,17 +32,21 @@ jobs:
       - name: Fetch all git tags
         run: git fetch --prune --unshallow --tags
 
-      - name: installing linux dependencies
-        if: startsWith(matrix.os, 'ubuntu-')
+      - name: installing Linux dependencies
+        if: matrix.target == 'linux'
         shell: bash
         run: |
-          # sudo sed -i 's/^deb/#deb/g' /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt update
+          sudo apt install -y libgl1-mesa-dev xorg-dev gcc-mingw-w64-x86-64 p7zip
+
+      - name: installing Windows dependencies
+        if: matrix.target == 'windows'
+        shell: bash
+        run: |
           sudo rm /etc/apt/sources.list.d/microsoft-prod.list
           curl https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -o packages-microsoft-prod.deb
           sudo dpkg -i --force-confnew packages-microsoft-prod.deb
-          sudo apt update
-          sudo apt install -y libgl1-mesa-dev xorg-dev gcc-mingw-w64-x86-64 p7zip
-      
+
       - uses: actions/setup-go@v6
         with:
           go-version: stable
@@ -86,8 +82,8 @@ jobs:
           if [[ "${GITHUB_REF}" == "refs/tags/"* ]]; then
             QBEE_CONNECT_VERSION=$REF_NAME
           fi
-          echo "Version = \"${QBEE_CONNECT_VERSION}\"" >> ./cmd/qbee-connect/FyneApp.toml
-          echo "Build = ${{ github.run_number }}" >> ./cmd/qbee-connect/FyneApp.toml
+          echo "Version = \"${QBEE_CONNECT_VERSION}\"" >> FyneApp.toml
+          echo "Build = ${{ github.run_number }}" >> FyneApp.toml
           
       - name: Build binary for ${{ matrix.target }} on ${{ matrix.arch }}
         shell: bash
@@ -95,8 +91,7 @@ jobs:
           GOARCH=${{ matrix.arch }} fyne build \
             --release \
             --target ${{ matrix.target }} \
-            --output $GITHUB_WORKSPACE/build/qbee-connect \
-            --src ./cmd/qbee-connect
+            --output $GITHUB_WORKSPACE/build/qbee-connect
      
       - name: Upload qbee-connect binary
         uses: actions/upload-artifact@v4
@@ -108,7 +103,6 @@ jobs:
           retention-days: 7
 
   build-artifacts-linux-windows:
-    if: github.event_name != 'pull_request'
     name: Build installers non-MacOS
     needs: build
     runs-on: ubuntu-24.04
@@ -148,50 +142,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build-artifacts-macos:
-    if: github.event_name != 'pull_request'
-    name: Build installers MacOS
-    needs: build
-    runs-on: macos-14
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download qbee-connect binaries
-        uses: actions/download-artifact@v6
-        with:
-          path: output
-
-      - name: Import Signing Certificate
-        uses: Apple-Actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.MACOS_SIGN_P12 }}
-          p12-password: ${{ secrets.MACOS_SIGN_PASSWORD }}
-          keychain: signing-db
-          create-keychain: true
-          unlock-keychain: true
-          keychain-password: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
-
-      - name: import notarization profile
-        env:
-          MACOS_NOTARY_PROFILE_NAME: ${{ secrets.MACOS_NOTARY_PROFILE_NAME }}
-          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
-          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
-          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
-          KEYCHAIN_NAME: signing-db
-        run: |
-          KEY_PATH=$RUNNER_TEMP/goreleaser.p8
-          echo -n "$MACOS_NOTARY_KEY" | base64 --decode -o $KEY_PATH
-
-          xcrun notarytool store-credentials "$MACOS_NOTARY_PROFILE_NAME" \
-            --key "$KEY_PATH" \
-            --key-id "$MACOS_NOTARY_KEY_ID" \
-            --issuer "$MACOS_NOTARY_ISSUER_ID" \
-            --keychain /Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db
-
-          # export the keychain path
-          echo "KEYCHAIN_PATH=/Users/runner/Library/Keychains/$KEYCHAIN_NAME.keychain-db" >>$GITHUB_ENV
-
       - name: Run goreleaser-pro
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -211,15 +161,6 @@ jobs:
           # in Github Actions with circular references
           find dist/darwin -type l -exec rm {} +
 
-      # - name: Add icon to installer
-      #   run: |
-      #     export VOLIME_NAME="qbee-connect_amd64"
-      #     hdiutil convert dist/dmg/qbee-connect_amd64.dmg -format UDRW -o dist/dmg/qbee-connect_temp_amd64_rw.dmg
-      #     SetFile -c icnC "/Volumes/$VOLUME_NAME/.VolumeIcon.icns"
-      #     SetFile -a C "/Volumes/$VOLUME_NAME"
-      #     SetFile -a V "/Volumes/$VOLUME_NAME/.VolumeIcon.icns"
-      #     hdiutil detach "/Volumes/$VOLUME_NAME"
-      #     hdiutil convert -format UDBZ -o qbee-connect_darwinamd64/qbee-connect_amd64-ro-icon.dmg qbee-connect_darwinamd64/qbee-connect_amd64-rw.dmg
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
@@ -232,7 +173,6 @@ jobs:
     name: Create Release
     needs:
       - build-artifacts-linux-windows
-      - build-artifacts-macos
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -264,137 +204,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           goreleaser continue --merge
-
-  # https://github.com/goreleaser/example-notarized-apps/blob/main/.github/workflows/release.yml
-
-  # build-macos-installer:
-  #   name: Build .pkg installer for MacOS ${{ matrix.arch }}
-  #   needs: build
-  #   defaults:
-  #     run:
-  #       working-directory: installer
-  #   strategy:
-  #     matrix:
-  #       arch: [amd64, arm64]
-
-  #   runs-on: macos-13
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #     - name: Fetch all git tags
-  #       run: git fetch --prune --unshallow --tags
-  #     - name: Set Version
-  #       if: ${{ env.VERSION == '' }}
-  #       run: |
-  #         export VERSION=$(git describe --tags --abbrev=0 --match 'v[0-9]*' | sed 's/^v//')-dev
-  #         echo "VERSION=$VERSION" >> $GITHUB_ENV
-  #     - name: Sync clock
-  #       run: sudo sntp -sS time.windows.com # https://github.com/actions/runner/issues/2996#issuecomment-1833103110
-  #     - name: Download MassaStation Package
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: massastation_darwin_${{ matrix.arch }}_package
-  #         path: installer
-  #     - name: Import Code Signing Certificates
-  #       uses: apple-actions/import-codesign-certs@v2
-  #       with:
-  #         p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
-  #         p12-password: ${{ secrets.APPLE_CERTIFICATE_P12_PASSWORD }}
-  #     - name: Build and sign Package
-  #       run: sh macos/create_pkg.sh ${{ matrix.arch }} "${{ vars.APPLE_DEVELOPER_ID_APPLICATION }}" "${{ vars.APPLE_DEVELOPER_ID_INSTALLER }}"
-  #       env:
-  #         VERSION: ${{ env.VERSION }}
-  #     - name: Notarise installer
-  #       continue-on-error: true
-  #       run: |
-  #         xcrun notarytool submit massastation_${{ env.VERSION }}_${{ matrix.arch }}.pkg --wait --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }}
-  #         xcrun stapler staple massastation_${{ env.VERSION }}_${{ matrix.arch }}.pkg
-  #     - name: Upload Package
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: massastation_installer_darwin_${{ matrix.arch }}
-  #         path: "installer/massastation_*.pkg"
-  #         if-no-files-found: error
-  #         retention-days: 7
-
-  # build-packages-windows:
-  #   name: Build .msi installer for amd64
-  #   needs: build
-  #   defaults:
-  #     run:
-  #       working-directory: ./installer
-  #   runs-on: windows-latest
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #     - name: Fetch all git tags
-  #       run: git fetch --prune --unshallow --tags
-  #     - name: Set Version
-  #       if: ${{ env.VERSION == '' }}
-  #       shell: bash
-  #       run: |
-  #         export VERSION=$(git describe --tags --abbrev=0 --match 'v[0-9]*' | sed 's/^v//')
-  #         echo "VERSION=$VERSION" >> $GITHUB_ENV
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.11
-  #     - name: Download MassaStation
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: massastation_windows_amd64_bin
-  #     - name: Rename MassaStation binary
-  #       run: mv ../massastation_windows_amd64.exe massastation.exe
-  #     - name: Build Installer
-  #       run: python windows/build_installer.py
-  #       env:
-  #         VERSION: ${{ env.VERSION }}
-  #     - name: Sign Windows binary
-  #       uses: ./.github/actions/sign-file-digicert
-  #       with:
-  #         files: installer/massastation_${{ env.VERSION }}_amd64.msi
-  #         SM_API_KEY: ${{ secrets.SM_API_KEY }}
-  #         SM_CLIENT_CERT_FILE_B64: ${{ secrets.SM_CLIENT_CERT_FILE_B64 }}
-  #         SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
-  #         SM_CERT_FINGERPRINT: ${{ secrets.SM_CERT_FINGERPRINT }}
-  #         SM_HOST: ${{ secrets.SM_HOST }}
-  #     - name: Upload Installer
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: massastation_installer_windows_amd64
-  #         path: "installer/*.msi"
-  #         if-no-files-found: error
-  #         retention-days: 7
-
-  # build-deb-installer:
-  #   name: Build .deb installer for Linux amd64
-  #   needs: build
-  #   defaults:
-  #     run:
-  #       working-directory: installer
-
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #     - name: Fetch all git tags
-  #       run: git fetch --prune --unshallow --tags
-  #     - name: Download MassaStation Package
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: massastation_linux_amd64_package
-  #         path: installer
-  #     - name: Build Package
-  #       run: sh deb/create_deb.sh
-  #       env:
-  #         VERSION: ${{ env.VERSION }}
-  #     - name: Upload Package
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: massastation_installer_deb_amd64
-  #         path: "installer/*.deb"
-  #         if-no-files-found: error
-  #         retention-days: 7

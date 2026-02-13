@@ -3,8 +3,6 @@ project_name: qbee-connect
 builds:
   - builder: prebuilt
     targets:
-      - "darwin_amd64"
-      - "darwin_arm64"
       - "windows_amd64"
       - "linux_amd64"
 
@@ -73,7 +71,7 @@ nfpms:
             owner: root
             group: root
 
-        - src: internal/ui/qbee-connect.png
+        - src: Icon.png
           dst: /usr/share/pixmaps/qbee-connect.png
           file_info:
             mode: 0644
@@ -88,30 +86,3 @@ msi:
     replace: true
     mod_timestamp: "{{ .CommitTimestamp }}"
     version: v3
-
-app_bundles:
-  - icon: darwin/qbee.icns
-    bundle: io.qbee.qbee-connect
-    name: "{{ .ProjectName }}"
-    id: "{{ .ProjectName }}_{{ .Arch }}"
-
-dmg:
-  - name: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
-    use: appbundle
-    replace: true
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    ids:
-      - "{{ .ProjectName }}_{{ .Arch }}"
-
-notarize:
-  macos_native:
-    - enabled: "true"
-      sign:
-        keychain: "{{ .Env.KEYCHAIN_PATH }}"
-        identity: "{{ .Env.MACOS_SIGN_IDENTITY }}"
-        options: [runtime]
-
-      notarize:
-        profile_name: "{{ .Env.MACOS_NOTARY_PROFILE_NAME }}"
-        wait: true
-
