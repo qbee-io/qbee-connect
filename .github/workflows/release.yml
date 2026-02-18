@@ -30,7 +30,7 @@ jobs:
       # Following credentials are from Qbee GitHub Actions service user account.
       SM_HOST: ${{ vars.SM_HOST }}
       SM_API_KEY: ${{ secrets.SM_API_KEY }}
-      SM_CLIENT_CERT_FILE: D:\a\_temp\Certificate_pkcs12.p12
+      SM_CLIENT_CERT_FILE: Certificate_pkcs12.p12
       SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
 
     steps:
