@@ -32,3 +32,5 @@ connect
 # .vscode/
 dist/
 output/
+windows/bin
+windows/obj
