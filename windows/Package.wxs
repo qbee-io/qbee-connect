@@ -3,7 +3,7 @@
 
   <Package Name="Qbee Connect"
     Manufacturer="Qbee AS"
-    Version="1.0.2"
+    Version="$(env.VERSION)"
     UpgradeCode="{1d2e9564-d66e-4520-9c0a-56522f23e729}"
     Scope="perUserOrMachine">
 
