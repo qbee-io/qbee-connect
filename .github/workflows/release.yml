@@ -45,8 +45,7 @@ jobs:
       #     dotnet add package WixToolset.UI.wixext --version 6.0.2
   
       - name: Build binary
-        shell: bash
-        run: fyne package --release --app-version $VERSION --app-build $BUILD_NUMBER
+        run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
 
       - name: Build MSI installer
         run: dotnet build windows -c Release -a x64
@@ -54,7 +53,7 @@ jobs:
       - name: Upload MSI to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload $VERSION windows\bin\Release\qbee-connect.msi --clobber
+        run: gh release upload ${{ env.VERSION }} windows\bin\Release\qbee-connect.msi --clobber
 
 
   macos-dmg:
@@ -84,8 +83,7 @@ jobs:
       - name: Build binary for ${{ matrix.arch }}
         env:
           GOARCH: ${{ matrix.arch }}
-        shell: bash
-        run: fyne package --release --app-version $VERSION --app-build $BUILD_NUMBER
+        run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
 
       - name: Sign Certificate
         env:
@@ -110,4 +108,4 @@ jobs:
       - name: Upload DMG to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload $VERSION qbee-connect_${{ matrix.arch }}.dmg --clobber
+        run: gh release upload ${{ env.VERSION }} qbee-connect_${{ matrix.arch }}.dmg --clobber
