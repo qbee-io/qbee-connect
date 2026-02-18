@@ -34,13 +34,6 @@ jobs:
       SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
 
     steps:
-      - name: Setup DigiCert KeyLocker
-        shell: bash
-        run: |
-          echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > ${{ env.SM_CLIENT_CERT_FILE }}
-          openssl.exe pkcs12 -in ${{ env.SM_CLIENT_CERT_FILE }} -passin env:SM_CLIENT_CERT_PASSWORD -clcerts -nokeys | openssl x509 -noout -subject
-          exit 1
-
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
@@ -53,7 +46,11 @@ jobs:
 
       - name: Install Fyne tool
         run: go install fyne.io/tools/cmd/fyne@latest
-  
+
+      - name: Setup DigiCert KeyLocker
+        shell: bash
+        run: |
+          echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > ${{ env.SM_CLIENT_CERT_FILE }}
 
       - name: Build binary
         run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
