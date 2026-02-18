@@ -38,17 +38,43 @@ jobs:
 
       - name: Install Fyne tool
         run: go install fyne.io/tools/cmd/fyne@latest
-
-      # - name: Install WiX Toolset
-      #   run: |
-      #     dotnet tool install --global wix --version 6.0.2
-      #     dotnet add package WixToolset.UI.wixext --version 6.0.2
   
+      - name: Setup Software Trust Manager
+        id: stm-setup
+        uses: digicert/code-signing-software-trust-action@v1.0.0
+      
+      - name: Setup DigiCert KeyLocker
+        run: |
+          echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > /d/sm_client_cert.p12
+          shell: bash
+
       - name: Build binary
         run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
+      
+      - name: Sign the binary
+        uses: digicert/code-signing-software-trust-action@v1
+        with:
+          simple-signing-mode: true
+          input: qbee-connect.exe
+        env:
+          SM_HOST: ${{ vars.SM_HOST }}
+          SM_API_KEY: ${{ secrets.SM_API_KEY }}
+          SM_CLIENT_CERT_FILE: D:\\Certificate_pkcs12.p12
+          SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
 
       - name: Build MSI installer
         run: dotnet build windows -c Release -a x64
+
+      - name: Sign the MSI
+        uses: digicert/code-signing-software-trust-action@v1
+        with:
+          simple-signing-mode: true
+          input: windows\bin\Release\qbee-connect.msi
+        env:
+          SM_HOST: ${{ vars.SM_HOST }}
+          SM_API_KEY: ${{ secrets.SM_API_KEY }}
+          SM_CLIENT_CERT_FILE: D:\\Certificate_pkcs12.p12
+          SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
 
       - name: Upload MSI to the release
         env:
