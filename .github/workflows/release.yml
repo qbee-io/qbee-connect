@@ -25,9 +25,11 @@ jobs:
     name: Windows Installer (MSI)
     runs-on: windows-2025
     env:
+      # The following environment variables are needed for the DigiCert Software Trust signing action.
+      # https://docs.digicert.com/en/digicert-keylocker/ci-cd-integrations-and-deployment-pipelines/plugins/github/binary-signing-using-github-actions.html
       SM_HOST: ${{ vars.SM_HOST }}
       SM_API_KEY: ${{ secrets.SM_API_KEY }}
-      SM_CLIENT_CERT_FILE: ${RUNNER_TEMP}/sm_client_cert.p12
+      SM_CLIENT_CERT_FILE: D:\a\_temp\sm_client_cert.p12
       SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
 
     steps:
@@ -45,9 +47,9 @@ jobs:
         run: go install fyne.io/tools/cmd/fyne@latest
   
       - name: Setup DigiCert KeyLocker
+        shell: bash
         run: |
           echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > ${{ env.SM_CLIENT_CERT_FILE }}
-          shell: bash
 
       - name: Build binary
         run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
