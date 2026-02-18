@@ -17,8 +17,8 @@ env:
   # VERSION: ${{ github.ref_name }}
   VERSION: 26.9.1
 
-  # BUILD_NUMBER is set to the unique run ID of the workflow.
-  BUILD_NUMBER: ${{ github.run_id }}
+  # BUILD_NUMBER is set to the run number of the workflow.
+  BUILD_NUMBER: ${{ github.run_number }}
 
 jobs:
   windows-msi:
