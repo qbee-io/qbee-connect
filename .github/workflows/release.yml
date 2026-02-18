@@ -51,6 +51,8 @@ jobs:
         shell: bash
         run: |
           echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > ${{ env.SM_CLIENT_CERT_FILE }}
+          openssl.exe pkcs12 -in ${{ env.SM_CLIENT_CERT_FILE }} -passin env:SM_CLIENT_CERT_PASSWORD -clcerts -nokeys | openssl x509 -noout -subject
+          exit 1
 
       - name: Build binary
         run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
@@ -84,7 +86,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-
+    if: false # Temporarily disable MacOS
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
