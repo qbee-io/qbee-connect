@@ -47,6 +47,11 @@ jobs:
       - name: Install Fyne tool
         run: go install fyne.io/tools/cmd/fyne@latest
 
+      - name: Installing Wix
+        run: |
+          dotnet tool install --global wix --version 6.0.2
+          dotnet add package WixToolset.UI.wixext --version 6.0.2
+
       - name: Setup DigiCert KeyLocker
         shell: bash
         run: |
