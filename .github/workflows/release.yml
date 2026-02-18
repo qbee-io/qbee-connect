@@ -8,6 +8,17 @@ permissions:
 on:
   release:
     types: [prereleased]
+  push:
+    branches:
+      - main
+
+env:
+  # VERSION is set to the release tag name, e.g., "1.0.0".
+  # VERSION: ${{ github.ref_name }}
+  VERSION: 26.9.1
+
+  # BUILD_NUMBER is set to the unique run ID of the workflow.
+  BUILD_NUMBER: ${{ github.run_id }}
 
 jobs:
   windows-msi:
@@ -35,17 +46,15 @@ jobs:
   
       - name: Build binary
         shell: bash
-        run: fyne package --release --app-version ${{ github.ref_name }} --app-build ${{ github.run_id }}
+        run: fyne package --release --app-version $VERSION --app-build $BUILD_NUMBER
 
       - name: Build MSI installer
-        env:
-          VERSION: ${{ github.ref_name }}
         run: dotnet build windows-c Release -a x64
 
       - name: Upload MSI to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.ref_name }} windows\bin\Release\qbee-connect.msi --clobber
+        run: gh release upload $VERSION windows\bin\Release\qbee-connect.msi --clobber
 
 
   macos-dmg:
@@ -76,7 +85,7 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         shell: bash
-        run: fyne package --release --app-version ${{ github.ref_name }} --app-build ${{ github.run_id }}
+        run: fyne package --release --app-version $VERSION --app-build $BUILD_NUMBER
 
       - name: Sign Certificate
         env:
@@ -96,9 +105,9 @@ jobs:
           # APPLE_CODE_NOTARY_PASSWORD is the password for the Apple ID used for notarization
           APPLE_CODE_NOTARY_PASSWORD: ${{ secrets.APPLE_CODE_NOTARY_PASSWORD }}
 
-        run: bash ./darwin/create-signed-dmg.sh Qbee-Connect_${{ matrix.arch }}.dmg
+        run: bash ./darwin/create-signed-dmg.sh qbee-connect_${{ matrix.arch }}.dmg
 
       - name: Upload DMG to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.ref_name }} Qbee-Connect_${{ matrix.arch }}.dmg --clobber
+        run: gh release upload $VERSION qbee-connect_${{ matrix.arch }}.dmg --clobber
