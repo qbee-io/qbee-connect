@@ -8,14 +8,10 @@ permissions:
 on:
   release:
     types: [prereleased]
-  push:
-    branches:
-      - main
 
 env:
   # VERSION is set to the release tag name, e.g., "1.0.0".
-  # VERSION: ${{ github.ref_name }}
-  VERSION: 26.9.1
+  VERSION: ${{ github.ref_name }}
 
   # BUILD_NUMBER is set to the run number of the workflow.
   BUILD_NUMBER: ${{ github.run_number }}
