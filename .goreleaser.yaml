@@ -2,9 +2,9 @@ version: 2
 project_name: qbee-connect
 builds:
   - builder: prebuilt
-    targets:
-      - "windows_amd64"
-      - "linux_amd64"
+    
+    os: linux
+    arch: amd64
 
     prebuilt:
       path: output/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ .ProjectName }}
@@ -77,12 +77,3 @@ nfpms:
             mode: 0644
             owner: root
             group: root
-
-msi:
-  - name: "{{ .ProjectName }}_{{ .Version }}_{{ .MsiArch }}"
-    wxs: ./windows/qbee-connect.wks
-    extra_files:
-      - windows/qbee.ico
-    replace: true
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    version: v3
