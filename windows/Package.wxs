@@ -1,0 +1,40 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+  xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="Qbee Connect"
+    Manufacturer="Qbee AS"
+    Version="$(env.VERSION)"
+    UpgradeCode="{1d2e9564-d66e-4520-9c0a-56522f23e729}"
+    Scope="perUserOrMachine">
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <WixVariable Id="WixUIDialogBmp" Value="dlgbmp.bmp" />
+    <WixVariable Id="WixUIBannerBmp" Value="bannrbmp.bmp" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="AppDir" Name="Qbee Connect" />
+    </StandardDirectory>
+
+    <Icon Id="QbeeConnectIcon.exe" SourceFile="../Icon.ico" />
+
+    <ComponentGroup Id="MainComponents" Directory="AppDir">
+      <Component Guid="{1d2e9564-d66e-4520-9c0a-56522f23e729}" Bitness="always64">
+        <File Id="QbeeConnectExe" Source="../qbee-connect.exe" KeyPath="yes" />
+
+        <Shortcut Id="DesktopShortcut"
+          Name="Qbee Connect"
+          Directory="DesktopFolder"
+          WorkingDirectory="AppDir"
+          Icon="QbeeConnectIcon.exe"
+          Advertise="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+  <Feature Id="MainProduct" Title="Qbee Connect" Level="1">
+      <ComponentGroupRef Id="MainComponents" />
+    </Feature>
+  </Package>
+</Wix>

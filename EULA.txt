@@ -1,0 +1,52 @@
+END USER LICENSE AGREEMENT (EULA) for qbee-connect
+Last Updated: February 2026
+
+IMPORTANT: PLEASE READ THIS END USER LICENSE AGREEMENT (“AGREEMENT”) CAREFULLY. BY DOWNLOADING, INSTALLING, OR USING THE QBEE-CONNECT APPLICATION (“SOFTWARE”), YOU AGREE TO BE BOUND BY THE TERMS OF THIS AGREEMENT AND THE QBEE TERMS OF SERVICE. IF YOU DO NOT AGREE, DO NOT USE THE SOFTWARE.
+
+1. RELATIONSHIP TO OTHER TERMS
+This Software is a desktop tool designed to facilitate remote access and secure tunnels to devices managed via the Qbee SaaS platform (the “Service”).
+
+The Software: The qbee-connect application is provided as open-source software under the Apache License, Version 2.0.
+
+The Service: Use of the Qbee SaaS platform, APIs, and backend infrastructure accessed through this Software is governed by the Qbee Terms of Service available at https://docs.qbee.io/terms-of-service.html.
+
+Conflict: In the event of a conflict between this EULA and the Qbee Terms of Service regarding the use of the SaaS platform, the Terms of Service shall prevail.
+
+2. LICENSE GRANT
+Subject to the terms of the Apache License 2.0, Qbee AS (“Qbee”) grants you a non-exclusive, worldwide license to use, reproduce, and distribute the Software. You may find a copy of the Apache License at: http://www.apache.org/licenses/LICENSE-2.0.
+
+3. SERVICE USAGE & ACCOUNT REQUIREMENTS
+To use the Software’s remote access features, you must:
+
+Account: Maintain an active and valid account on the Qbee platform.
+
+Compliance: Comply with the Qbee Terms of Service, including any restrictions on commercial use for free or trial tiers.
+
+Connectivity: Acknowledge that the Software establishes secure tunnels through Qbee’s infrastructure. You are responsible for ensuring your devices and network configurations meet the requirements for secure operation.
+
+4. DATA CONSUMPTION & FAIR USE
+As per Section 14 of the Qbee Terms of Service, remote access and secure tunnels created by qbee-connect consume bandwidth. You agree to "Fair Use" of data bandwidth. Qbee reserves the right to charge additional fees or limit access if your data volume exceeds specified tier limits.
+
+5. SECURITY RESPONSIBILITIES
+The Software provides powerful remote access capabilities. You are solely responsible for:
+
+Establishing adequate security policies for your devices.
+
+Keeping your Qbee login credentials and bootstrap keys secret.
+
+The legality of the content and data transmitted through the tunnels established by the Software.
+
+6. NO WARRANTY (AS-IS)
+THE SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using the Software and assume any risks associated with your exercise of permissions under this Agreement.
+
+7. LIMITATION OF LIABILITY
+As per Section 17 of the Qbee Terms of Service, Qbee’s total annual liability arising out of the Agreement will not exceed the total amount paid by you in the 12 months preceding the event. Qbee shall not be liable for any loss of data, profits, or any indirect, special, incidental, or consequential damages arising from the use or inability to use the Software.
+
+8. EXPORT CONTROL
+The Software and related services may be subject to export control and encryption laws of Norway, the EU, the USA, and other jurisdictions. You represent and warrant that you are not located in a prohibited country or on any prohibited parties list.
+
+9. PRIVACY
+Data processed by the Software and Service is handled in accordance with the Qbee Privacy Policy, available at https://docs.qbee.io/privacy-policy.html.
+
+10. GOVERNING LAW
+This Agreement is governed by the laws of Norway. Any disputes shall be settled by the Oslo City Court as the exclusive legal venue.
