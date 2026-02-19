@@ -84,7 +84,6 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    if: false # Temporarily disable MacOS
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
