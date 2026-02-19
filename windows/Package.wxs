@@ -9,7 +9,6 @@
 
     <MediaTemplate EmbedCab="yes" />
 
-    <WixVariable Id="WixUILicenseRtf" Value="../EULA.rtf" />
     <WixVariable Id="WixUIDialogBmp" Value="dlgbmp.bmp" />
     <WixVariable Id="WixUIBannerBmp" Value="bannrbmp.bmp" />
 
