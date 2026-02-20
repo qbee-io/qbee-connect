@@ -32,22 +32,34 @@ jobs:
         with:
           go-version: stable
 
-      - name: Install Fyne tool
-        run: go install fyne.io/tools/cmd/fyne@latest
+      - name: Install packaging tools
+        run: |
+          go install fyne.io/tools/cmd/fyne@latest
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
       - name: Installing OS dependencies
         shell: bash
         run: |
           sudo apt update
-          sudo apt install -y libgl1-mesa-dev xorg-dev gcc-mingw-w64-x86-64 p7zip
+          sudo apt install -y libgl1-mesa-dev xorg-dev
 
       - name: Build binary
         run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
 
+      - name: Create Linux packages (RPM, DEB)
+        run: |
+          tar -xf qbee-connect.tar.xz
+          nfpm pkg --packager deb
+          nfpm pkg --packager rpm
+
       - name: Upload package to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}_amd64${{ matrix.ext }} --clobber
+        run: |
+          mv qbee-connect.tar.xz qbee-connect_${{ env.VERSION }}.tar.xz
+          gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}.tar.xz --clobber
+          gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}_amd64.deb --clobber
+          gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}-1.x86_64.rpm --clobber
 
   windows-msi:
     name: Windows Installer (MSI)

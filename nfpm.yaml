@@ -1,5 +1,5 @@
 name: qbee-connect
-arch: ${GOARCH}
+arch: amd64
 platform: linux
 version: ${VERSION}
 maintainer: The Qbee Team <support@qbee.io>
@@ -27,15 +27,22 @@ overrides:
     - libXxf86vm
 
 contents:
-  - src: linux/qbee-connect.desktop
-    dst: /usr/share/applications/qbee-connect.desktop
+  - src: usr/local/bin/qbee-connect
+    dst: /usr/local/bin/qbee-connect
+    file_info:
+      mode: 0755
+      owner: root
+      group: root
+
+  - src: usr/local/share/applications/io.qbee.connect.desktop
+    dst: /usr/local/share/applications/io.qbee.connect.desktop
     file_info:
       mode: 0644
       owner: root
       group: root
 
-  - src: Icon.png
-    dst: /usr/share/pixmaps/qbee-connect.png
+  - src: usr/local/share/pixmaps/io.qbee.connect.png
+    dst: /usr/local/share/pixmaps/io.qbee.connect.png
     file_info:
       mode: 0644
       owner: root
