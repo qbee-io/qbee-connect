@@ -21,7 +21,7 @@ jobs:
           sudo apt install -y libgl1-mesa-dev xorg-dev
       - uses: actions/setup-go@v6
         with:
-          go-version: 1.25
+          go-version: 1.25.7
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:

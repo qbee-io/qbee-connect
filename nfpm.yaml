@@ -1,0 +1,49 @@
+name: qbee-connect
+arch: amd64
+platform: linux
+version: ${VERSION}
+maintainer: The Qbee Team <support@qbee.io>
+description: Qbee Connect Desktop Utility
+vendor: qbee AS
+homepage: https://qbee.io/
+license: Apache-2.0
+
+depends:
+  - libgl1
+  - libxcursor1
+  - libxi6
+  - libxinerama1
+  - libxrandr2
+  - libxxf86vm1
+
+overrides:
+  rpm:
+    depends:
+    - mesa-libGL
+    - libXcursor
+    - libXi
+    - libXinerama
+    - libXrandr
+    - libXxf86vm
+
+contents:
+  - src: usr/local/bin/qbee-connect
+    dst: /usr/local/bin/qbee-connect
+    file_info:
+      mode: 0755
+      owner: root
+      group: root
+
+  - src: usr/local/share/applications/io.qbee.connect.desktop
+    dst: /usr/local/share/applications/io.qbee.connect.desktop
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
+
+  - src: usr/local/share/pixmaps/io.qbee.connect.png
+    dst: /usr/local/share/pixmaps/io.qbee.connect.png
+    file_info:
+      mode: 0644
+      owner: root
+      group: root
