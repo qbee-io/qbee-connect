@@ -56,10 +56,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mv qbee-connect.tar.xz qbee-connect_${{ env.VERSION }}.tar.xz
-          gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}.tar.xz --clobber
+          mv qbee-connect.tar.xz qbee-connect_${{ env.VERSION }}_linux_amd64.tar.xz
+          gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}_linux_amd64.tar.xz --clobber
           gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}_amd64.deb --clobber
-          gh release upload ${{ env.VERSION }} qbee-connect_${{ env.VERSION }}-1.x86_64.rpm --clobber
+          gh release upload ${{ env.VERSION }} qbee-connect-${{ env.VERSION }}-1.x86_64.rpm --clobber
 
   windows-msi:
     name: Windows Installer (MSI)
