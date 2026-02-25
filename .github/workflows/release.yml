@@ -44,7 +44,7 @@ jobs:
           sudo apt install -y libgl1-mesa-dev xorg-dev
 
       - name: Build binary
-        run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
+        run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }} --executable qbee-connect
 
       - name: Create Linux packages (RPM, DEB)
         run: |
@@ -148,7 +148,7 @@ jobs:
       - name: Build binary for ${{ matrix.arch }}
         env:
           GOARCH: ${{ matrix.arch }}
-        run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }}
+        run: fyne package --release --app-version ${{ env.VERSION }} --app-build ${{ env.BUILD_NUMBER }} --executable qbee-connect
 
       - name: Sign Certificate
         env:
