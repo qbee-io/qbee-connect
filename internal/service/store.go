@@ -132,7 +132,7 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 	if err != nil {
 		return fmt.Errorf("error saving %s: %w", filepath.Join(cs.storage.RootURI().Path(), connectionsFileName), err)
 	}
-	defer func() { err = w.Close() }()
+	defer func() { _ = w.Close() }()
 
 	err = json.NewEncoder(w).Encode(snapShot)
 	return err
