@@ -66,7 +66,7 @@ func NewConnectionStore(s fyne.Storage) (*ConnectionStore, error) {
 	// Ensure the connections file exists for future saves
 	if store.fileExists(connectionsFileName) {
 		if err := store.LoadFromDisk(); err != nil {
-			return nil, fmt.Errorf("error loading existing connections: %w", err)
+			return nil, fmt.Errorf("error loading existing connections from %s: %w", filepath.Join(s.RootURI().Path(), connectionsFileName), err)
 		}
 		return store, nil
 	}
