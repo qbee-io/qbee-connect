@@ -123,7 +123,7 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 	cs.savedItems[nodeID] = conn
 	cs.mutex.Unlock() // Unlock before IO
 
-	snapShot := cs.SnapshotActive() // Get a snapshot of active items to save
+	snapShot := cs.SnapshotSaved() // Get a snapshot of saved items to save
 
 	var w fyne.URIWriteCloser
 	var err error
@@ -165,5 +165,14 @@ func (cs *ConnectionStore) SnapshotActive() map[string]*DeviceConnections {
 	defer cs.mutex.Unlock()
 	out := make(map[string]*DeviceConnections, len(cs.activeItems))
 	maps.Copy(out, cs.activeItems)
+	return out
+}
+
+// SnapshotSaved returns a copy of the saved items map.
+func (cs *ConnectionStore) SnapshotSaved() map[string]*DeviceConnections {
+	cs.mutex.Lock()
+	defer cs.mutex.Unlock()
+	out := make(map[string]*DeviceConnections, len(cs.savedItems))
+	maps.Copy(out, cs.savedItems)
 	return out
 }
