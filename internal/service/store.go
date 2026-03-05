@@ -64,7 +64,7 @@ func NewConnectionStore(s fyne.Storage) (*ConnectionStore, error) {
 	}
 
 	// Ensure the connections file exists for future saves
-	if store.FileExists(connectionsFileName) {
+	if store.fileExists(connectionsFileName) {
 		if err := store.LoadFromDisk(); err != nil {
 			return nil, fmt.Errorf("error loading existing connections: %w", err)
 		}
@@ -151,8 +151,8 @@ func (cs *ConnectionStore) LoadFromDisk() error {
 	return err
 }
 
-// FileExists checks if a file exists in storage
-func (cs *ConnectionStore) FileExists(name string) bool {
+// fileExists checks if a file exists in storage
+func (cs *ConnectionStore) fileExists(name string) bool {
 	list := cs.storage.List()
 	return slices.Contains(list, name)
 }
