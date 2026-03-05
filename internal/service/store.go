@@ -123,7 +123,7 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 	cs.savedItems[nodeID] = conn
 	cs.mutex.Unlock() // Unlock before IO
 
-	snapShot := cs.SnapshotSaved() // Get a snapshot of saved items to save
+	snapshot := cs.SnapshotSaved() // Get a snapshot of saved items to save
 
 	var w fyne.URIWriteCloser
 	var err error
@@ -134,7 +134,7 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 	}
 	defer func() { _ = w.Close() }()
 
-	err = json.NewEncoder(w).Encode(snapShot)
+	err = json.NewEncoder(w).Encode(snapshot)
 	return err
 }
 
