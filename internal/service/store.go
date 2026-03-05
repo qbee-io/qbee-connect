@@ -63,12 +63,11 @@ func NewConnectionStore(s fyne.Storage) (*ConnectionStore, error) {
 		storage:     s,
 	}
 
-	if err := store.LoadFromDisk(); err != nil {
-		return nil, err
-	}
-
 	// Ensure the connections file exists for future saves
 	if store.FileExists(connectionsFileName) {
+		if err := store.LoadFromDisk(); err != nil {
+			return nil, fmt.Errorf("error loading existing connections: %w", err)
+		}
 		return store, nil
 	}
 
@@ -79,6 +78,11 @@ func NewConnectionStore(s fyne.Storage) (*ConnectionStore, error) {
 		return nil, fmt.Errorf("error creating %s: %w", filepath.Join(s.RootURI().Path(), connectionsFileName), err)
 	}
 	defer func() { _ = writer.Close() }()
+
+	// Save the empty connections map to disk
+	if err := json.NewEncoder(writer).Encode(store.savedItems); err != nil {
+		return nil, fmt.Errorf("error initializing %s: %w", filepath.Join(s.RootURI().Path(), connectionsFileName), err)
+	}
 
 	return store, nil
 }
@@ -136,10 +140,6 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 func (cs *ConnectionStore) LoadFromDisk() error {
 	var err error
 	var r fyne.URIReadCloser
-
-	if !cs.FileExists(connectionsFileName) {
-		return nil // No file to load, not an error
-	}
 
 	r, err = cs.storage.Open(connectionsFileName)
 	if err != nil {
