@@ -2,7 +2,9 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"maps"
+	"path/filepath"
 	"slices"
 	"sync"
 
@@ -61,9 +63,27 @@ func NewConnectionStore(s fyne.Storage) (*ConnectionStore, error) {
 		storage:     s,
 	}
 
-	if err := store.LoadFromDisk(); err != nil {
-		return nil, err
+	// Ensure the connections file exists for future saves
+	if store.fileExists(connectionsFileName) {
+		if err := store.LoadFromDisk(); err != nil {
+			return nil, fmt.Errorf("error loading existing connections from %s: %w", filepath.Join(s.RootURI().Path(), connectionsFileName), err)
+		}
+		return store, nil
 	}
+
+	// Create and save an empty connections file if it doesn't exist. This ensures that we have
+	// a valid file to write to later, and can also help catch any storage issues early.
+	writer, err := s.Create(connectionsFileName)
+	if err != nil {
+		return nil, fmt.Errorf("error creating %s: %w", filepath.Join(s.RootURI().Path(), connectionsFileName), err)
+	}
+	defer func() { _ = writer.Close() }()
+
+	// Save the empty connections map to disk
+	if err := json.NewEncoder(writer).Encode(store.savedItems); err != nil {
+		return nil, fmt.Errorf("error initializing %s: %w", filepath.Join(s.RootURI().Path(), connectionsFileName), err)
+	}
+
 	return store, nil
 }
 
@@ -103,16 +123,18 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 	cs.savedItems[nodeID] = conn
 	cs.mutex.Unlock() // Unlock before IO
 
+	snapshot := cs.SnapshotSaved() // Get a snapshot of saved items to save
+
 	var w fyne.URIWriteCloser
 	var err error
 
 	w, err = cs.storage.Save(connectionsFileName)
 	if err != nil {
-		return err
+		return fmt.Errorf("error saving %s: %w", filepath.Join(cs.storage.RootURI().Path(), connectionsFileName), err)
 	}
-	defer func() { err = w.Close() }()
+	defer func() { _ = w.Close() }()
 
-	err = json.NewEncoder(w).Encode(cs.savedItems)
+	err = json.NewEncoder(w).Encode(snapshot)
 	return err
 }
 
@@ -120,13 +142,6 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 func (cs *ConnectionStore) LoadFromDisk() error {
 	var err error
 	var r fyne.URIReadCloser
-
-	list := cs.storage.List()
-
-	// if no saved connections, skip loading
-	if !slices.Contains(list, connectionsFileName) {
-		return nil
-	}
 
 	r, err = cs.storage.Open(connectionsFileName)
 	if err != nil {
@@ -138,11 +153,26 @@ func (cs *ConnectionStore) LoadFromDisk() error {
 	return err
 }
 
+// fileExists checks if a file exists in storage
+func (cs *ConnectionStore) fileExists(name string) bool {
+	list := cs.storage.List()
+	return slices.Contains(list, name)
+}
+
 // SnapshotActive returns a copy of the active items map.
 func (cs *ConnectionStore) SnapshotActive() map[string]*DeviceConnections {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 	out := make(map[string]*DeviceConnections, len(cs.activeItems))
 	maps.Copy(out, cs.activeItems)
+	return out
+}
+
+// SnapshotSaved returns a copy of the saved items map.
+func (cs *ConnectionStore) SnapshotSaved() map[string]*DeviceConnections {
+	cs.mutex.Lock()
+	defer cs.mutex.Unlock()
+	out := make(map[string]*DeviceConnections, len(cs.savedItems))
+	maps.Copy(out, cs.savedItems)
 	return out
 }
