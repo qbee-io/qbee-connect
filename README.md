@@ -15,7 +15,7 @@ qbee-connect uses [qbee-cli](https://github.com/qbee-io/qbee-cli) under the hood
 
 ## Authentication
 
-Authentication is handled via the **OAuth2 Device Authentication Flow**. When you log in, you will be redirected to the qbee.io platform in your browser to complete authentication. No credentials are stored locally by the application.
+Authentication is handled via the **OAuth2 Device Authentication Flow**. When you log in, you will be redirected to the qbee.io platform in your browser to complete authentication. Credentials are stored locally by qbee-cli in `~/.qbee/qbee-cli.json`.
 
 ## Installation
 
