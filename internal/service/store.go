@@ -128,11 +128,10 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 	var w fyne.URIWriteCloser
 	var err error
 
-	// Check if file exists and use appropriate method
-	if !cs.fileExists(connectionsFileName) {
-		w, err = cs.storage.Create(connectionsFileName) // Create new file
-	} else {
-		w, err = cs.storage.Save(connectionsFileName) // Update existing file
+	// Attempt to save to the existing file; fall back to creating it if it no longer exists.
+	w, err = cs.storage.Save(connectionsFileName)
+	if err != nil {
+		w, err = cs.storage.Create(connectionsFileName)
 	}
 
 	if err != nil {
