@@ -19,6 +19,7 @@ type infoDelegate interface {
 	GetStore() *service.ConnectionStore
 	GetWindow() fyne.Window
 	DisplayError(title, msg string)
+	GetDeviceTitle(device *client.InventoryListItem) string
 }
 
 // NewDeviceInfoDialog creates a dialog showing connection info for a device
@@ -26,7 +27,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 
 	targetInfo, ok := d.GetStore().GetActive(device.NodeID)
 	infoContainer := container.NewVBox(
-		widget.NewLabel("Target information: " + device.Title),
+		widget.NewLabel("Target information: " + d.GetDeviceTitle(device)),
 	)
 
 	if ok {

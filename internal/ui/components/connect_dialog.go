@@ -21,6 +21,7 @@ type connectDelegate interface {
 	GetWindow() fyne.Window
 	RefreshUINoLoad()
 	DisplayError(title, msg string)
+	GetDeviceTitle(item *client.InventoryListItem) string
 }
 
 // NewConnectDialog creates a new connection configuration dialog
@@ -53,7 +54,7 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 	addBtn.SetIcon(theme.ContentAddIcon())
 
 	content := container.NewVBox(
-		widget.NewLabel("Configure port forwarding: "+device.Title),
+		widget.NewLabel("Configure port forwarding: "+d.GetDeviceTitle(device)),
 		widget.NewSeparator(),
 		targetsContainer,
 		addBtn,
@@ -103,7 +104,7 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 
 	ctx, cancel := context.WithCancel(d.GetContext())
 	d.GetStore().SetActive(device.NodeID, &service.DeviceConnections{
-		Title:   device.Title,
+		Title:   d.GetDeviceTitle(device),
 		Targets: targets,
 		Cancel:  cancel,
 	})
@@ -124,7 +125,7 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	}()
 
 	err := d.GetStore().SaveToDisk(device.NodeID, &service.DeviceConnections{
-		Title:   device.Title,
+		Title:   d.GetDeviceTitle(device),
 		Targets: targets,
 	})
 	if err != nil {
