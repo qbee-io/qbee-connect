@@ -462,3 +462,20 @@ func (app *App) SetLoggedIn() error {
 
 	return nil
 }
+
+func (app *App) GetDeviceTitle(item *client.InventoryListItem) string {
+	title := item.Title
+	if app.user == nil {
+		return title
+	}
+
+	if app.user.User.HostName != "device_name" {
+		return title
+	}
+
+	if item.Attributes.DeviceName == "" {
+		return title
+	}
+
+	return item.Attributes.DeviceName
+}
