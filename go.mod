@@ -1,6 +1,6 @@
 module go.qbee.io/connect
 
-go 1.25.7
+go 1.26.2
 
 require (
 	fyne.io/fyne/v2 v2.7.2
@@ -37,10 +37,10 @@ require (
 	github.com/xtaci/smux v1.5.55 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
 	go.qbee.io/transport v1.25.28 // indirect
-	golang.org/x/image v0.24.0 // indirect
+	golang.org/x/image v0.39.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/term v0.39.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

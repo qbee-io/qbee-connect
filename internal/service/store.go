@@ -128,7 +128,12 @@ func (cs *ConnectionStore) SaveToDisk(nodeID string, conn *DeviceConnections) er
 	var w fyne.URIWriteCloser
 	var err error
 
+	// Attempt to save to the existing file; fall back to creating it if it no longer exists.
 	w, err = cs.storage.Save(connectionsFileName)
+	if err != nil {
+		w, err = cs.storage.Create(connectionsFileName)
+	}
+
 	if err != nil {
 		return fmt.Errorf("error saving %s: %w", filepath.Join(cs.storage.RootURI().Path(), connectionsFileName), err)
 	}
