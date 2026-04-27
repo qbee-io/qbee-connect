@@ -92,21 +92,29 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 		if rowIndex == 0 {
 			continue
 		}
-		if row, ok := obj.(*fyne.Container); ok {
-
-			localPort := row.Objects[0].(*widget.Entry).Text
-			if localPort == "" {
-				localPort = generateRandomPort(d, row.Objects[1].(*widget.Entry).Text)
-			}
-
-			targets = append(targets, client.RemoteAccessTarget{
-				LocalPort:  localPort,
-				LocalHost:  row.Objects[1].(*widget.Entry).Text,
-				RemotePort: row.Objects[3].(*widget.Entry).Text,
-				RemoteHost: row.Objects[4].(*widget.Entry).Text,
-				Protocol:   row.Objects[5].(*widget.Select).Selected,
-			})
+		var row *fyne.Container
+		var ok bool
+		if row, ok = obj.(*fyne.Container); !ok {
+			continue
 		}
+
+		localPort := row.Objects[0].(*widget.Entry).Text
+		if localPort == "" || localPort == "0" {
+			var err error
+			localPort, err = generateRandomPort(d, row.Objects[1].(*widget.Entry).Text)
+			if err != nil {
+				d.DisplayError("Port Error", err.Error())
+				return
+			}
+		}
+
+		targets = append(targets, client.RemoteAccessTarget{
+			LocalPort:  localPort,
+			LocalHost:  row.Objects[1].(*widget.Entry).Text,
+			RemotePort: row.Objects[3].(*widget.Entry).Text,
+			RemoteHost: row.Objects[4].(*widget.Entry).Text,
+			Protocol:   row.Objects[5].(*widget.Select).Selected,
+		})
 	}
 
 	ctx, cancel := context.WithCancel(d.GetContext())
@@ -142,21 +150,21 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	dialog.Hide()
 }
 
-func generateRandomPort(d connectDelegate, localhost string) string {
+func generateRandomPort(d connectDelegate, localhost string) (string, error) {
 
 	port, err := getFreePort(localhost)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	store := d.GetStore()
 	for {
 		if store.IsPortFree(localhost, port) {
-			return fmt.Sprintf("%d", port)
+			return fmt.Sprintf("%d", port), nil
 		}
 		port, err = getFreePort(localhost)
 		if err != nil {
-			return ""
+			return "", err
 		}
 	}
 }
