@@ -2,6 +2,8 @@ package components
 
 import (
 	"context"
+	"fmt"
+	"net"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -91,8 +93,14 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 			continue
 		}
 		if row, ok := obj.(*fyne.Container); ok {
+
+			localPort := row.Objects[0].(*widget.Entry).Text
+			if localPort == "" {
+				localPort = generateRandomPort(d, row.Objects[1].(*widget.Entry).Text)
+			}
+
 			targets = append(targets, client.RemoteAccessTarget{
-				LocalPort:  row.Objects[0].(*widget.Entry).Text,
+				LocalPort:  localPort,
 				LocalHost:  row.Objects[1].(*widget.Entry).Text,
 				RemotePort: row.Objects[3].(*widget.Entry).Text,
 				RemoteHost: row.Objects[4].(*widget.Entry).Text,
@@ -132,6 +140,41 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	}
 	d.RefreshUINoLoad()
 	dialog.Hide()
+}
+
+func generateRandomPort(d connectDelegate, localhost string) string {
+
+	port, err := getFreePort(localhost)
+	if err != nil {
+		return ""
+	}
+
+	store := d.GetStore()
+	for {
+		if store.IsPortFree(localhost, port) {
+			return fmt.Sprintf("%d", port)
+		}
+		port, err = getFreePort(localhost)
+		if err != nil {
+			return ""
+		}
+	}
+}
+
+func getFreePort(address string) (int, error) {
+	// We use "tcp" and ":0" to let the OS choose an available port
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:0", address))
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+
+	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
 func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.RemoteAccessTarget) {

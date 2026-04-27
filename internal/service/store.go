@@ -181,3 +181,19 @@ func (cs *ConnectionStore) SnapshotSaved() map[string]*DeviceConnections {
 	maps.Copy(out, cs.savedItems)
 	return out
 }
+
+// IsPortFree checks if a local port is already in use by any saved connection for the given localhost
+func (cs *ConnectionStore) IsPortFree(localHost string, localPort int) bool {
+	cs.mutex.Lock()
+	defer cs.mutex.Unlock()
+
+	for _, device := range cs.savedItems {
+		for _, t := range device.Targets {
+			if t.LocalHost == localHost && t.LocalPort == fmt.Sprintf("%d", localPort) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
