@@ -182,15 +182,16 @@ func (cs *ConnectionStore) SnapshotSaved() map[string]*DeviceConnections {
 	return out
 }
 
-// IsPortFree checks if a local port is already in use by any saved connection for the given localhost
-func (cs *ConnectionStore) IsPortFree(localHost string, localPort int) bool {
+// IsPortFree checks if a local port is already in use by any saved connection
+// for the given localhost and transport protocol.
+func (cs *ConnectionStore) IsPortFree(localHost string, localPort int, protocol string) bool {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 
 	portStr := fmt.Sprintf("%d", localPort)
 	for _, device := range cs.savedItems {
 		if slices.ContainsFunc(device.Targets, func(t client.RemoteAccessTarget) bool {
-			return t.LocalHost == localHost && t.LocalPort == portStr
+			return t.LocalHost == localHost && t.LocalPort == portStr && t.Protocol == protocol
 		}) {
 			return false
 		}
