@@ -87,6 +87,9 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 
 func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targetsContainer *fyne.Container, dialog *widget.PopUp) {
 	var targets []client.RemoteAccessTarget
+	// assignedPorts tracks ports chosen during this save pass to avoid assigning
+	// the same port to multiple targets before they are persisted to the store.
+	assignedPorts := make(map[string]struct{})
 	for rowIndex, obj := range targetsContainer.Objects {
 		// Skip the header row
 		if rowIndex == 0 {
@@ -103,12 +106,13 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 		protocol := row.Objects[5].(*widget.Select).Selected
 		if localPort == "" || localPort == "0" {
 			var err error
-			localPort, err = generateRandomPort(d, localHost, protocol)
+			localPort, err = generateRandomPort(d, localHost, protocol, assignedPorts)
 			if err != nil {
 				d.DisplayError("Port Error", err.Error())
 				return
 			}
 		}
+		assignedPorts[portKey(localHost, protocol, localPort)] = struct{}{}
 
 		targets = append(targets, client.RemoteAccessTarget{
 			LocalPort:  localPort,
@@ -152,8 +156,12 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	dialog.Hide()
 }
 
-func generateRandomPort(d connectDelegate, localhost, protocol string) (string, error) {
+// portKey returns a unique string key for a (localHost, protocol, port) combination.
+func portKey(localHost, protocol, port string) string {
+	return localHost + ":" + protocol + ":" + port
+}
 
+func generateRandomPort(d connectDelegate, localhost, protocol string, assignedPorts map[string]struct{}) (string, error) {
 	port, err := getFreePort(localhost, protocol)
 	if err != nil {
 		return "", err
@@ -161,8 +169,9 @@ func generateRandomPort(d connectDelegate, localhost, protocol string) (string, 
 
 	store := d.GetStore()
 	for {
-		if store.IsPortFree(localhost, port, protocol) {
-			return fmt.Sprintf("%d", port), nil
+		portStr := fmt.Sprintf("%d", port)
+		if _, alreadyUsed := assignedPorts[portKey(localhost, protocol, portStr)]; !alreadyUsed && store.IsPortFree(localhost, port, protocol) {
+			return portStr, nil
 		}
 		port, err = getFreePort(localhost, protocol)
 		if err != nil {
