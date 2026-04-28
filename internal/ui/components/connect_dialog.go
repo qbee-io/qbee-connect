@@ -99,9 +99,11 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 		}
 
 		localPort := row.Objects[0].(*widget.Entry).Text
+		localHost := row.Objects[1].(*widget.Entry).Text
+		protocol := row.Objects[5].(*widget.Select).Selected
 		if localPort == "" || localPort == "0" {
 			var err error
-			localPort, err = generateRandomPort(d, row.Objects[1].(*widget.Entry).Text)
+			localPort, err = generateRandomPort(d, localHost, protocol)
 			if err != nil {
 				d.DisplayError("Port Error", err.Error())
 				return
@@ -110,10 +112,10 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 
 		targets = append(targets, client.RemoteAccessTarget{
 			LocalPort:  localPort,
-			LocalHost:  row.Objects[1].(*widget.Entry).Text,
+			LocalHost:  localHost,
 			RemotePort: row.Objects[3].(*widget.Entry).Text,
 			RemoteHost: row.Objects[4].(*widget.Entry).Text,
-			Protocol:   row.Objects[5].(*widget.Select).Selected,
+			Protocol:   protocol,
 		})
 	}
 
@@ -150,26 +152,50 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	dialog.Hide()
 }
 
-func generateRandomPort(d connectDelegate, localhost string) (string, error) {
+func generateRandomPort(d connectDelegate, localhost, protocol string) (string, error) {
 
-	port, err := getFreePort(localhost)
+	port, err := getFreePort(localhost, protocol)
 	if err != nil {
 		return "", err
 	}
 
 	store := d.GetStore()
 	for {
-		if store.IsPortFree(localhost, port) {
+		if store.IsPortFree(localhost, port, protocol) {
 			return fmt.Sprintf("%d", port), nil
 		}
-		port, err = getFreePort(localhost)
+		port, err = getFreePort(localhost, protocol)
 		if err != nil {
 			return "", err
 		}
 	}
 }
 
-func getFreePort(address string) (int, error) {
+func getFreePort(address, protocol string) (int, error) {
+	if protocol == "udp" {
+		return getFreeUDPPort(address)
+	}
+	return getFreeTCPPort(address)
+}
+
+func getFreeUDPPort(address string) (int, error) {
+	// We use "udp" and port "0" to let the OS choose an available port.
+	// net.JoinHostPort correctly brackets IPv6 literals.
+	addr, err := net.ResolveUDPAddr("udp", net.JoinHostPort(address, "0"))
+	if err != nil {
+		return 0, err
+	}
+
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = conn.Close() }()
+
+	return conn.LocalAddr().(*net.UDPAddr).Port, nil
+}
+
+func getFreeTCPPort(address string) (int, error) {
 	// We use "tcp" and port "0" to let the OS choose an available port.
 	// net.JoinHostPort correctly brackets IPv6 literals.
 	addr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(address, "0"))
