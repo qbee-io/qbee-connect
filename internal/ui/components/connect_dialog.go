@@ -170,8 +170,9 @@ func generateRandomPort(d connectDelegate, localhost string) (string, error) {
 }
 
 func getFreePort(address string) (int, error) {
-	// We use "tcp" and ":0" to let the OS choose an available port
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:0", address))
+	// We use "tcp" and port "0" to let the OS choose an available port.
+	// net.JoinHostPort correctly brackets IPv6 literals.
+	addr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(address, "0"))
 	if err != nil {
 		return 0, err
 	}
