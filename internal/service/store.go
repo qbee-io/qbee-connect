@@ -25,7 +25,7 @@ type DeviceConnections struct {
 	Cancel func() `json:"-"`
 }
 
-// default unmarshalling to handle old formats
+// UnmarshalJSON implements custom unmarshaling to support both old and new formats of DeviceConnections
 func (dc *DeviceConnections) UnmarshalJSON(data []byte) error {
 	// attempt to unmarshal new format
 	var aux struct {
@@ -187,11 +187,12 @@ func (cs *ConnectionStore) IsPortFree(localHost string, localPort int) bool {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
 
+	portStr := fmt.Sprintf("%d", localPort)
 	for _, device := range cs.savedItems {
-		for _, t := range device.Targets {
-			if t.LocalHost == localHost && t.LocalPort == fmt.Sprintf("%d", localPort) {
-				return false
-			}
+		if slices.ContainsFunc(device.Targets, func(t client.RemoteAccessTarget) bool {
+			return t.LocalHost == localHost && t.LocalPort == portStr
+		}) {
+			return false
 		}
 	}
 
