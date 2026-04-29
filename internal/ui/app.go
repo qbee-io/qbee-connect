@@ -462,3 +462,24 @@ func (app *App) SetLoggedIn() error {
 
 	return nil
 }
+
+const deviceNameAttribute = "device_name"
+
+// GetDeviceTitle returns Attributes.DeviceName when the user is configured
+// to use "device_name" and the device name is set; otherwise it returns Title.
+func (app *App) GetDeviceTitle(item *client.InventoryListItem) string {
+	title := item.Title
+	if app.user == nil {
+		return title
+	}
+
+	if app.user.User.HostName != deviceNameAttribute {
+		return title
+	}
+
+	if item.Attributes.DeviceName == "" {
+		return title
+	}
+
+	return item.Attributes.DeviceName
+}
