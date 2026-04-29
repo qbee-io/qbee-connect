@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"slices"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -98,25 +99,13 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 			continue
 		}
 
-		localPort := row.Objects[0].(*widget.Entry).Text
-		localHost := row.Objects[1].(*widget.Entry).Text
-		protocol := row.Objects[5].(*widget.Select).Selected
-		if localPort == "" || localPort == "0" {
-			var err error
-			localPort, err = generateRandomPort(d, localHost, protocol)
-			if err != nil {
-				d.DisplayError("Port Error", err.Error())
-				return
-			}
+		var target *client.RemoteAccessTarget
+		target, err := setTargetEntries(d, row, targets)
+		if err != nil {
+			d.DisplayError("Invalid Target", fmt.Sprintf("Error in row %d: %v", rowIndex, err))
+			return
 		}
-
-		targets = append(targets, client.RemoteAccessTarget{
-			LocalPort:  localPort,
-			LocalHost:  localHost,
-			RemotePort: row.Objects[3].(*widget.Entry).Text,
-			RemoteHost: row.Objects[4].(*widget.Entry).Text,
-			Protocol:   protocol,
-		})
+		targets = append(targets, *target)
 	}
 
 	ctx, cancel := context.WithCancel(d.GetContext())
@@ -152,6 +141,38 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	dialog.Hide()
 }
 
+// maxFreePortRetries defines how many times to attempt finding a free local port when "0" or empty is specified
+const maxFreePortRetries = 10
+
+// setTargetEntries reads the entries from the UI row and constructs a RemoteAccessTarget.
+func setTargetEntries(d connectDelegate, row *fyne.Container, targets []client.RemoteAccessTarget) (*client.RemoteAccessTarget, error) {
+	target := &client.RemoteAccessTarget{
+		LocalPort:  row.Objects[0].(*widget.Entry).Text,
+		LocalHost:  row.Objects[1].(*widget.Entry).Text,
+		RemotePort: row.Objects[3].(*widget.Entry).Text,
+		RemoteHost: row.Objects[4].(*widget.Entry).Text,
+		Protocol:   row.Objects[5].(*widget.Select).Selected,
+	}
+
+	if target.LocalPort != "" && target.LocalPort != "0" {
+		return target, nil
+	}
+
+	for range maxFreePortRetries {
+		var err error
+		if target.LocalPort, err = generateRandomPort(d, target.LocalHost, target.Protocol); err != nil {
+			return nil, err
+		}
+		if !slices.ContainsFunc(targets, func(t client.RemoteAccessTarget) bool {
+			return t.LocalHost == target.LocalHost && t.LocalPort == target.LocalPort && t.Protocol == target.Protocol
+		}) {
+			return target, nil
+		}
+	}
+	return nil, fmt.Errorf("failed to find a free local port after %d attempts", maxFreePortRetries)
+}
+
+// generateRandomPort attempts to find a free local port on the specified localhost and protocol. It checks with the store to ensure the port is not already used in another target.
 func generateRandomPort(d connectDelegate, localhost, protocol string) (string, error) {
 
 	port, err := getFreePort(localhost, protocol)
@@ -160,7 +181,7 @@ func generateRandomPort(d connectDelegate, localhost, protocol string) (string, 
 	}
 
 	store := d.GetStore()
-	for {
+	for range maxFreePortRetries {
 		if store.IsPortFree(localhost, port, protocol) {
 			return fmt.Sprintf("%d", port), nil
 		}
@@ -169,8 +190,10 @@ func generateRandomPort(d connectDelegate, localhost, protocol string) (string, 
 			return "", err
 		}
 	}
+	return "", fmt.Errorf("failed to find a free local port after %d attempts", maxFreePortRetries)
 }
 
+// getFreePort finds a free local port for the given address and protocol by asking the OS to assign one. It delegates to protocol-specific functions for TCP and UDP.
 func getFreePort(address, protocol string) (int, error) {
 	if protocol == "udp" {
 		return getFreeUDPPort(address)
@@ -178,9 +201,8 @@ func getFreePort(address, protocol string) (int, error) {
 	return getFreeTCPPort(address)
 }
 
+// getFreeUDPPort finds a free local UDP port for the given address by asking the OS to assign one.
 func getFreeUDPPort(address string) (int, error) {
-	// We use "udp" and port "0" to let the OS choose an available port.
-	// net.JoinHostPort correctly brackets IPv6 literals.
 	addr, err := net.ResolveUDPAddr("udp", net.JoinHostPort(address, "0"))
 	if err != nil {
 		return 0, err
@@ -195,9 +217,8 @@ func getFreeUDPPort(address string) (int, error) {
 	return conn.LocalAddr().(*net.UDPAddr).Port, nil
 }
 
+// getFreeTCPPort finds a free local TCP port for the given address by asking the OS to assign one.
 func getFreeTCPPort(address string) (int, error) {
-	// We use "tcp" and port "0" to let the OS choose an available port.
-	// net.JoinHostPort correctly brackets IPv6 literals.
 	addr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(address, "0"))
 	if err != nil {
 		return 0, err
