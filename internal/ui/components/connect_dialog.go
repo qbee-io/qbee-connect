@@ -159,11 +159,19 @@ func setTargetEntries(d connectDelegate, row *fyne.Container, targets []client.R
 		return target, nil
 	}
 
+	store := d.GetStore()
 	for range maxFreePortRetries {
-		var err error
-		if target.LocalPort, err = generateRandomPort(d, target.LocalHost, target.Protocol); err != nil {
+		port, err := getFreePort(target.LocalHost, target.Protocol)
+		if err != nil {
 			return nil, err
 		}
+
+		if !store.IsPortFree(target.LocalHost, port, target.Protocol) {
+			continue
+		}
+
+		target.LocalPort = fmt.Sprintf("%d", port)
+		// Double-check that the generated port is not already in the current list of targets to avoid duplicates within the same session
 		if !slices.ContainsFunc(targets, func(t client.RemoteAccessTarget) bool {
 			return t.LocalHost == target.LocalHost && t.LocalPort == target.LocalPort && t.Protocol == target.Protocol
 		}) {
@@ -171,27 +179,6 @@ func setTargetEntries(d connectDelegate, row *fyne.Container, targets []client.R
 		}
 	}
 	return nil, fmt.Errorf("failed to find a free local port after %d attempts", maxFreePortRetries)
-}
-
-// generateRandomPort attempts to find a free local port on the specified localhost and protocol. It checks with the store to ensure the port is not already used in another target.
-func generateRandomPort(d connectDelegate, localhost, protocol string) (string, error) {
-
-	port, err := getFreePort(localhost, protocol)
-	if err != nil {
-		return "", err
-	}
-
-	store := d.GetStore()
-	for range maxFreePortRetries {
-		if store.IsPortFree(localhost, port, protocol) {
-			return fmt.Sprintf("%d", port), nil
-		}
-		port, err = getFreePort(localhost, protocol)
-		if err != nil {
-			return "", err
-		}
-	}
-	return "", fmt.Errorf("failed to find a free local port after %d attempts", maxFreePortRetries)
 }
 
 // getFreePort finds a free local port for the given address and protocol by asking the OS to assign one. It delegates to protocol-specific functions for TCP and UDP.
