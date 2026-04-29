@@ -25,7 +25,7 @@ type DeviceConnections struct {
 	Cancel func() `json:"-"`
 }
 
-// default unmarshalling to handle old formats
+// UnmarshalJSON implements custom unmarshaling to support both old and new formats of DeviceConnections
 func (dc *DeviceConnections) UnmarshalJSON(data []byte) error {
 	// attempt to unmarshal new format
 	var aux struct {
@@ -180,4 +180,22 @@ func (cs *ConnectionStore) SnapshotSaved() map[string]*DeviceConnections {
 	out := make(map[string]*DeviceConnections, len(cs.savedItems))
 	maps.Copy(out, cs.savedItems)
 	return out
+}
+
+// IsPortFree checks if a local port is already in use by any saved connection
+// for the given localhost and transport protocol.
+func (cs *ConnectionStore) IsPortFree(localHost string, localPort int, protocol string) bool {
+	cs.mutex.Lock()
+	defer cs.mutex.Unlock()
+
+	portStr := fmt.Sprintf("%d", localPort)
+	for _, device := range cs.savedItems {
+		if slices.ContainsFunc(device.Targets, func(t client.RemoteAccessTarget) bool {
+			return t.LocalHost == localHost && t.LocalPort == portStr && t.Protocol == protocol
+		}) {
+			return false
+		}
+	}
+
+	return true
 }

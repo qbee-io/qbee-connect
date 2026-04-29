@@ -2,6 +2,9 @@ package components
 
 import (
 	"context"
+	"fmt"
+	"net"
+	"slices"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -91,15 +94,19 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 		if rowIndex == 0 {
 			continue
 		}
-		if row, ok := obj.(*fyne.Container); ok {
-			targets = append(targets, client.RemoteAccessTarget{
-				LocalPort:  row.Objects[0].(*widget.Entry).Text,
-				LocalHost:  row.Objects[1].(*widget.Entry).Text,
-				RemotePort: row.Objects[3].(*widget.Entry).Text,
-				RemoteHost: row.Objects[4].(*widget.Entry).Text,
-				Protocol:   row.Objects[5].(*widget.Select).Selected,
-			})
+		var row *fyne.Container
+		var ok bool
+		if row, ok = obj.(*fyne.Container); !ok {
+			continue
 		}
+
+		var target *client.RemoteAccessTarget
+		target, err := setTargetEntries(d, row, targets)
+		if err != nil {
+			d.DisplayError("Invalid Target", fmt.Sprintf("Error in row %d: %v", rowIndex, err))
+			return
+		}
+		targets = append(targets, *target)
 	}
 
 	ctx, cancel := context.WithCancel(d.GetContext())
@@ -133,6 +140,85 @@ func saveAndConnect(d connectDelegate, device *client.InventoryListItem, targets
 	}
 	d.RefreshUINoLoad()
 	dialog.Hide()
+}
+
+// maxFreePortRetries defines how many times to attempt finding a free local port when "0" or empty is specified
+const maxFreePortRetries = 10
+
+// setTargetEntries reads the entries from the UI row and constructs a RemoteAccessTarget.
+func setTargetEntries(d connectDelegate, row *fyne.Container, targets []client.RemoteAccessTarget) (*client.RemoteAccessTarget, error) {
+	target := &client.RemoteAccessTarget{
+		LocalPort:  row.Objects[0].(*widget.Entry).Text,
+		LocalHost:  row.Objects[1].(*widget.Entry).Text,
+		RemotePort: row.Objects[3].(*widget.Entry).Text,
+		RemoteHost: row.Objects[4].(*widget.Entry).Text,
+		Protocol:   row.Objects[5].(*widget.Select).Selected,
+	}
+
+	if target.LocalPort != "" && target.LocalPort != "0" {
+		return target, nil
+	}
+
+	store := d.GetStore()
+	for range maxFreePortRetries {
+		port, err := getFreePort(target.LocalHost, target.Protocol)
+		if err != nil {
+			return nil, err
+		}
+
+		if !store.IsPortFree(target.LocalHost, port, target.Protocol) {
+			continue
+		}
+
+		target.LocalPort = fmt.Sprintf("%d", port)
+		// Double-check that the generated port is not already in the current list of targets to avoid duplicates within the same session
+		if !slices.ContainsFunc(targets, func(t client.RemoteAccessTarget) bool {
+			return t.LocalHost == target.LocalHost && t.LocalPort == target.LocalPort && t.Protocol == target.Protocol
+		}) {
+			return target, nil
+		}
+	}
+	return nil, fmt.Errorf("failed to find a free local port after %d attempts", maxFreePortRetries)
+}
+
+// getFreePort finds a free local port for the given address and protocol by asking the OS to assign one. It delegates to protocol-specific functions for TCP and UDP.
+func getFreePort(address, protocol string) (int, error) {
+	if protocol == "udp" {
+		return getFreeUDPPort(address)
+	}
+	return getFreeTCPPort(address)
+}
+
+// getFreeUDPPort finds a free local UDP port for the given address by asking the OS to assign one.
+func getFreeUDPPort(address string) (int, error) {
+	addr, err := net.ResolveUDPAddr("udp", net.JoinHostPort(address, "0"))
+	if err != nil {
+		return 0, err
+	}
+
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = conn.Close() }()
+
+	return conn.LocalAddr().(*net.UDPAddr).Port, nil
+}
+
+// getFreeTCPPort finds a free local TCP port for the given address by asking the OS to assign one.
+func getFreeTCPPort(address string) (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(address, "0"))
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = l.Close() }()
+
+	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
 func addConnectRow(c *fyne.Container, form *fyne.Container, prefill *client.RemoteAccessTarget) {
