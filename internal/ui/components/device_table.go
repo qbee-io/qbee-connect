@@ -22,6 +22,7 @@ type tableDelegate interface {
 	GetStore() *service.ConnectionStore
 	ShowConnectDialog(item *client.InventoryListItem)
 	ShowInfoDialog(item *client.InventoryListItem)
+	GetDeviceTitle(item *client.InventoryListItem) string
 }
 
 const (
@@ -98,7 +99,9 @@ func updateCell(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject) {
 // updateTitleCell updates the title cell with the device's name
 func updateTitleCell(d tableDelegate, cell *fyne.Container, item client.InventoryListItem) {
 	cell.RemoveAll()
-	titleLable := widgets.NewClickableLabel(item.Title, func() {
+
+	hostTitle := d.GetDeviceTitle(&item)
+	titleLabel := widgets.NewClickableLabel(hostTitle, func() {
 		// check if item has active connections
 		if _, ok := d.GetStore().GetActive(item.NodeID); ok {
 			d.ShowInfoDialog(&item)
@@ -106,8 +109,8 @@ func updateTitleCell(d tableDelegate, cell *fyne.Container, item client.Inventor
 			d.ShowConnectDialog(&item)
 		}
 	})
-	titleLable.Truncation = fyne.TextTruncateEllipsis
-	cell.Add(titleLable)
+	titleLabel.Truncation = fyne.TextTruncateEllipsis
+	cell.Add(titleLabel)
 }
 
 // updateStatusCell updates the status cell with the device's online/offline status
