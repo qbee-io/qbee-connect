@@ -27,21 +27,21 @@ overrides:
     - libXxf86vm
 
 contents:
-  - src: usr/local/bin/qbee-connect
+  - src: qbee-connect/usr/local/bin/qbee-connect
     dst: /usr/local/bin/qbee-connect
     file_info:
       mode: 0755
       owner: root
       group: root
 
-  - src: usr/local/share/applications/io.qbee.connect.desktop
+  - src: qbee-connect/usr/local/share/applications/io.qbee.connect.desktop
     dst: /usr/local/share/applications/io.qbee.connect.desktop
     file_info:
       mode: 0644
       owner: root
       group: root
 
-  - src: usr/local/share/pixmaps/io.qbee.connect.png
+  - src: qbee-connect/usr/local/share/pixmaps/io.qbee.connect.png
     dst: /usr/local/share/pixmaps/io.qbee.connect.png
     file_info:
       mode: 0644
