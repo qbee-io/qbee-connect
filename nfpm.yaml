@@ -26,7 +26,7 @@ overrides:
     - libXinerama
     - libXi
     - libxkbcommon
-    - wayland
+    - libwayland-client
 
 contents:
   - src: qbee-connect/usr/local/bin/qbee-connect
