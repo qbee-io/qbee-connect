@@ -41,10 +41,10 @@ require (
 	github.com/xtaci/smux v1.5.57 // indirect
 	github.com/yuin/goldmark v1.8.2 // indirect
 	go.qbee.io/transport v1.26.27 // indirect
-	golang.org/x/image v0.39.0 // indirect
+	golang.org/x/image v0.44.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
