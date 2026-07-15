@@ -40,7 +40,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 		))
 
 		for _, t := range targetInfo.Targets {
-			targetString := fmt.Sprintf("**%s**: %s:%s → %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
+			targetString := fmt.Sprintf("**%s**: %s:%s => %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
 
 			mappedPort := renderMappedPort(t)
 			openAction := getOpenURLButton(d, t)
