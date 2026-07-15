@@ -85,3 +85,16 @@ var DeviceColumns = []DeviceColumn{
 	{Title: "Tags", WidthQuotient: 0.20},
 	{Title: "", WidthQuotient: 0.06}, // Actions column
 }
+
+// InitDeviceSortKey initializes the sort key for the devices based on the provided sortKey.
+// This is only for the device label which can be set to "device_name" or "fqhost".
+func (m *DeviceModel) InitDeviceSortKey(sortKey string) {
+	m.Query.SortField = sortKey
+	m.Query.SortDirection = client.SortDirectionAsc
+	for i, col := range DeviceColumns {
+		if col.Title == "Device" {
+			DeviceColumns[i].SortKey = sortKey
+			return
+		}
+	}
+}
