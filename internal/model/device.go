@@ -79,7 +79,7 @@ type DeviceColumn struct {
 	WidthQuotient float32
 }
 
-// DeviceColumns defines the columns for the device table
+// DefaultDeviceColumns defines the default column configuration for the device table
 var DefaultDeviceColumns = []DeviceColumn{
 	{Title: "Device", Sortable: true, SortKey: DefaultSortField, WidthQuotient: 0.19},
 	{Title: "Online", Sortable: true, SortKey: "exp_hard", WidthQuotient: 0.10},
