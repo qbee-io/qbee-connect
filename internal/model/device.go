@@ -92,6 +92,13 @@ var DefaultDeviceColumns = []DeviceColumn{
 // InitDeviceSortKey initializes the sort key for the devices based on the provided sortKey.
 // This is only for the device label which can be set to "device_name" or "fqhost".
 func (m *DeviceModel) InitDeviceSortKey(sortKey string) {
+	switch sortKey {
+	case "device_name", "fqhost":
+		// allowed
+	default:
+		sortKey = DefaultSortField
+	}
+
 	m.Query.SortField = sortKey
 	m.Query.SortDirection = client.SortDirectionAsc
 	for i, col := range m.DeviceColumns {
