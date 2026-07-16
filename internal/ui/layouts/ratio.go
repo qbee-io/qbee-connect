@@ -19,8 +19,8 @@ func (r *RatioLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	r.Table.Resize(size)
 	r.Table.Move(fyne.NewPos(0, 0))
 
-	for i := range model.DeviceColumns {
-		newColWidth := (size.Width - WindowPadding) * model.DeviceColumns[i].WidthQuotient
+	for i := range model.DefaultDeviceColumns {
+		newColWidth := (size.Width - WindowPadding) * model.DefaultDeviceColumns[i].WidthQuotient
 		r.Table.SetColumnWidth(i, newColWidth)
 	}
 }

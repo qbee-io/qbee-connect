@@ -10,7 +10,7 @@ const (
 	// DefaultOffset defines the default offset for pagination
 	DefaultOffset = 0
 	// DefaultSortField defines the default field to sort by
-	DefaultSortField = "title"
+	DefaultSortField = "fqhost"
 	// DefaultSortDirection defines the default sort direction
 	DefaultSortDirection = client.SortDirectionAsc
 	// DefaultReportType defines the default report type
@@ -31,6 +31,8 @@ type DeviceModel struct {
 	ActiveTunnelsOnly bool
 	// Query holds the current query parameters for filtering and sorting
 	Query *client.InventoryListQuery
+	// DeviceColumns defines the columns for the device table
+	DeviceColumns []DeviceColumn
 }
 
 // NewDeviceModel initializes a new DeviceModel with default values
@@ -49,6 +51,7 @@ func NewDeviceModel() *DeviceModel {
 				Title: DefaultSearchTerm,
 			},
 		},
+		DeviceColumns: DefaultDeviceColumns,
 	}
 }
 
@@ -77,8 +80,8 @@ type DeviceColumn struct {
 }
 
 // DeviceColumns defines the columns for the device table
-var DeviceColumns = []DeviceColumn{
-	{Title: "Device", Sortable: true, SortKey: "title", WidthQuotient: 0.19},
+var DefaultDeviceColumns = []DeviceColumn{
+	{Title: "Device", Sortable: true, SortKey: DefaultSortField, WidthQuotient: 0.19},
 	{Title: "Online", Sortable: true, SortKey: "exp_hard", WidthQuotient: 0.10},
 	{Title: "Connection Info", WidthQuotient: 0.15},
 	{Title: "Group", WidthQuotient: 0.30},
@@ -91,9 +94,9 @@ var DeviceColumns = []DeviceColumn{
 func (m *DeviceModel) InitDeviceSortKey(sortKey string) {
 	m.Query.SortField = sortKey
 	m.Query.SortDirection = client.SortDirectionAsc
-	for i, col := range DeviceColumns {
+	for i, col := range m.DeviceColumns {
 		if col.Title == "Device" {
-			DeviceColumns[i].SortKey = sortKey
+			m.DeviceColumns[i].SortKey = sortKey
 			return
 		}
 	}
