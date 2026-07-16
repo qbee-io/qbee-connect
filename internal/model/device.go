@@ -51,7 +51,7 @@ func NewDeviceModel() *DeviceModel {
 				Title: DefaultSearchTerm,
 			},
 		},
-		DeviceColumns: DefaultDeviceColumns,
+		DeviceColumns: append([]DeviceColumn(nil), DefaultDeviceColumns...),
 	}
 }
 
