@@ -21,7 +21,7 @@ jobs:
       - name: Dependency Vulnerability Check
         run: |
           sudo apt update
-          sudo apt install -y libgl1-mesa-dev xorg-dev
+          sudo apt install -y libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev
       - id: govulncheck
         uses: golang/govulncheck-action@v1
         with:
