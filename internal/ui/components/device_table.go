@@ -47,7 +47,7 @@ var statusIcons = map[string]fyne.ThemeIconName{
 func NewDeviceTable(d tableDelegate) *widget.Table {
 	table := widget.NewTable(
 		func() (int, int) {
-			return len(d.GetDeviceModel().FilteredData.Items), len(model.DeviceColumns)
+			return len(d.GetDeviceModel().FilteredData.Items), len(d.GetDeviceModel().DeviceColumns)
 		},
 		func() fyne.CanvasObject {
 			return container.NewStack()
@@ -206,11 +206,11 @@ func updateHeader(d tableDelegate, id widget.TableCellID, obj fyne.CanvasObject)
 	if id.Col < 0 {
 		return
 	}
-	if id.Col >= len(model.DeviceColumns) {
+	if id.Col >= len(d.GetDeviceModel().DeviceColumns) {
 		return
 	}
 	btn := obj.(*widgets.ButtonPointer)
-	col := model.DeviceColumns[id.Col]
+	col := d.GetDeviceModel().DeviceColumns[id.Col]
 
 	if col.Title == "" {
 		btn.Hide()

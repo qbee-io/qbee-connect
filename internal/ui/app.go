@@ -400,6 +400,8 @@ func (app *App) SetLoggedIn() error {
 	}
 	app.user = user
 
+	app.deviceModel.InitDeviceSortKey(user.User.HostName)
+
 	if len(app.user.Accounts) < 2 {
 		// No account switcher needed
 		return nil
