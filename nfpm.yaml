@@ -11,20 +11,22 @@ license: Apache-2.0
 depends:
   - libgl1
   - libxcursor1
-  - libxi6
-  - libxinerama1
   - libxrandr2
-  - libxxf86vm1
+  - libxinerama1
+  - libxi6
+  - libxkbcommon0
+  - libwayland-client0
 
 overrides:
   rpm:
     depends:
     - mesa-libGL
     - libXcursor
-    - libXi
-    - libXinerama
     - libXrandr
-    - libXxf86vm
+    - libXinerama
+    - libXi
+    - libxkbcommon
+    - libwayland-client
 
 contents:
   - src: qbee-connect/usr/local/bin/qbee-connect

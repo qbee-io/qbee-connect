@@ -51,7 +51,7 @@ func UpdateActiveConnectionsView(a activeConnectionsDelegate, activeView fyne.Ca
 		conn := active[id]
 		md := "# " + conn.Title + "\n**Device ID:** " + id + "\n\n"
 		for _, t := range conn.Targets {
-			md += fmt.Sprintf("- **%s**: %s:%s → %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
+			md += fmt.Sprintf("- **%s**: %s:%s => %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
 		}
 		mdWidget := widget.NewRichTextFromMarkdown(md)
 

@@ -2,3 +2,5 @@
 Name = "qbee-connect"
 ID = "io.qbee.connect"
 Build = 2
+[Migrations]
+fyneDo = true
