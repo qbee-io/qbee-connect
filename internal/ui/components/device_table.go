@@ -115,20 +115,25 @@ func updateTitleCell(d tableDelegate, cell *fyne.Container, item client.Inventor
 
 // updateStatusCell updates the status cell with the device's online/offline status
 func updateStatusCell(cell *fyne.Container, item client.InventoryListItem) {
-	iconName, ok := statusIcons[item.Status]
+	cell.RemoveAll()
+	cell.Add(newStatusIcon(item.Status))
+}
+
+// newStatusIcon returns a colored icon representing the device status (online, delayed, disconnected)
+func newStatusIcon(status string) *widget.Icon {
+	iconName, ok := statusIcons[status]
 	if !ok {
 		iconName = theme.IconNameQuestion
 	}
 
-	colorName, ok := statusColors[item.Status]
+	colorName, ok := statusColors[status]
 	if !ok {
 		colorName = theme.ColorNameDisabled
 	}
 	icon := theme.NewThemedResource(theme.Icon(iconName))
 	icon.ColorName = colorName
 
-	cell.RemoveAll()
-	cell.Add(widget.NewIcon(icon))
+	return widget.NewIcon(icon)
 }
 
 // updateTagsCell updates the tags cell with the device's tags

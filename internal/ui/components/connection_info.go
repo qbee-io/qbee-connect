@@ -28,8 +28,12 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 
 	targetInfo, ok := d.GetStore().GetActive(device.NodeID)
 	sshUser := d.GetPreferences().Get().DefaultSSHUserName
+	// dialogContent is assigned below; the closure re-lays out the dialog when the
+	// interfaces list is expanded or collapsed.
+	var dialogContent *fyne.Container
 	infoContainer := container.NewVBox(
-		widget.NewLabel("Target information: " + d.GetDeviceTitle(device)),
+		newDeviceDetails(d.GetFyneApp(), d.GetDeviceTitle(device), device, func() { dialogContent.Refresh() }),
+		widget.NewSeparator(),
 	)
 
 	if ok {
@@ -75,7 +79,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 		widgets.NewButtonPointer("Close", func() { dialog.Hide() }),
 	)
 
-	dialogContent := container.NewBorder(
+	dialogContent = container.NewBorder(
 		infoContainer,
 		footer,
 		nil, nil,

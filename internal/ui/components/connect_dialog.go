@@ -19,6 +19,7 @@ import (
 // connectDelegate defines the methods required by the connect dialog
 type connectDelegate interface {
 	GetClient() *client.Client
+	GetFyneApp() fyne.App
 	GetContext() context.Context
 	GetStore() *service.ConnectionStore
 	GetWindow() fyne.Window
@@ -56,8 +57,11 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 	})
 	addBtn.SetIcon(theme.ContentAddIcon())
 
+	// dialogContent is assigned below; the closure re-lays out the dialog when the
+	// interfaces list is expanded or collapsed.
+	var dialogContent *fyne.Container
 	content := container.NewVBox(
-		widget.NewLabel("Configure port forwarding: "+d.GetDeviceTitle(device)),
+		newDeviceDetails(d.GetFyneApp(), d.GetDeviceTitle(device), device, func() { dialogContent.Refresh() }),
 		widget.NewSeparator(),
 		targetsContainer,
 		addBtn,
@@ -75,12 +79,12 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 		widgets.NewButtonPointer("Cancel", func() { dialog.Hide() }),
 	)
 
-	dialogContent := container.NewBorder(
+	dialogContent = container.NewPadded(container.NewBorder(
 		content,
 		footer,
 		nil, nil,
 		widget.NewCard("", "", container.NewWithoutLayout()),
-	)
+	))
 
 	dialog = widget.NewModalPopUp(dialogContent, d.GetWindow().Canvas())
 	dialog.Resize(fyne.NewSize(800, 500))
