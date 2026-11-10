@@ -13,7 +13,7 @@ import (
 )
 
 // MakeMenu constructs the main application menu
-func MakeMenu() *fyne.MainMenu {
+func MakeMenu(d preferencesDelegate) *fyne.MainMenu {
 
 	openAppearance := func() {
 		w := fyne.CurrentApp().NewWindow("Settings")
@@ -33,7 +33,8 @@ func MakeMenu() *fyne.MainMenu {
 	}
 	aboutItem := fyne.NewMenuItem("About", showAbout)
 	appearanceItem := fyne.NewMenuItem("Appearance", openAppearance)
-	mainMenu := fyne.NewMenu("File", aboutItem, appearanceItem)
+	preferencesItem := fyne.NewMenuItem("Preferences", func() { NewPreferencesDialog(d).Show() })
+	mainMenu := fyne.NewMenu("File", aboutItem, appearanceItem, preferencesItem)
 	return fyne.NewMainMenu(mainMenu)
 }
 

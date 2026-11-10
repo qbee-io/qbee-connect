@@ -15,6 +15,7 @@ import (
 // activeConnectionsDelegate defines the interface for accessing the ConnectionStore
 type activeConnectionsDelegate interface {
 	GetStore() *service.ConnectionStore
+	GetPreferences() *service.PreferencesStore
 }
 
 // NewActiveConnections creates a new ActiveConnections view
@@ -47,11 +48,17 @@ func UpdateActiveConnectionsView(a activeConnectionsDelegate, activeView fyne.Ca
 	}
 	sort.Strings(ids)
 
+	sshUser := a.GetPreferences().Get().DefaultSSHUserName
+
 	for _, id := range ids {
 		conn := active[id]
 		md := "# " + conn.Title + "\n**Device ID:** " + id + "\n\n"
 		for _, t := range conn.Targets {
-			md += fmt.Sprintf("- **%s**: %s:%s => %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
+			md += fmt.Sprintf("- **%s**: %s:%s => %s:%s", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
+			if t.Protocol != "udp" && t.RemotePort == serviceSSHPort {
+				md += fmt.Sprintf(" (`%s`)", renderSSHCommand(t, sshUser))
+			}
+			md += "\n"
 		}
 		mdWidget := widget.NewRichTextFromMarkdown(md)
 
