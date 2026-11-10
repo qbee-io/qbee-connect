@@ -18,7 +18,7 @@ import (
 // newTitleWithLastReported renders a status icon and the given title on the left and the
 // device's last reported time on the right of the same line.
 func newTitleWithLastReported(title fyne.CanvasObject, device *client.InventoryListItem) fyne.CanvasObject {
-	lastReported := widget.NewLabel("Last reported: " + formatLastReported(device.LastReportedTime))
+	lastReported := widget.NewLabel("Last connect: " + formatLastReported(device.LastReportedTime))
 	// Indent the icon so it lines up with the text of the labels below it, which have
 	// their own inner padding.
 	statusIcon := container.New(layout.NewCustomPaddedLayout(0, 0, theme.Padding(), 0), newStatusIcon(device.Status))
