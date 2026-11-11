@@ -33,3 +33,6 @@ jobs:
 
       - name: govet
         run: go vet ./...
+
+      - name: test
+        run: go test -race -coverprofile=coverage.out ./...
