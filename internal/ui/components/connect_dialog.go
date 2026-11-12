@@ -57,15 +57,11 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 	})
 	addBtn.SetIcon(theme.ContentAddIcon())
 
-	// dialogContent is assigned below; the closure re-lays out the dialog when the
-	// interfaces list is expanded or collapsed.
-	var dialogContent *fyne.Container
-	content := container.NewVBox(
-		newDeviceDetails(d.GetFyneApp(), d.GetDeviceTitle(device), device, func() { dialogContent.Refresh() }),
-		widget.NewSeparator(),
-		targetsContainer,
-		addBtn,
-	)
+	header := newDeviceDetails(d.GetDeviceTitle(device), device)
+
+	portsTab := container.NewTabItemWithIcon("Connect", theme.LoginIcon(),
+		container.NewVScroll(container.NewVBox(targetsContainer, container.NewHBox(addBtn))))
+	tabs := newDeviceTabs(d, device, portsTab)
 
 	// Declare dialog variable first so we can close it inside the callback
 	var dialog *widget.PopUp
@@ -79,15 +75,15 @@ func NewConnectDialog(d connectDelegate, device *client.InventoryListItem) *widg
 		widgets.NewButtonPointer("Cancel", func() { dialog.Hide() }),
 	)
 
-	dialogContent = container.NewPadded(container.NewBorder(
-		content,
+	dialogContent := container.NewPadded(container.NewBorder(
+		header,
 		footer,
 		nil, nil,
-		widget.NewCard("", "", container.NewWithoutLayout()),
+		tabs,
 	))
 
 	dialog = widget.NewModalPopUp(dialogContent, d.GetWindow().Canvas())
-	dialog.Resize(fyne.NewSize(800, 500))
+	dialog.Resize(deviceDialogSize(d.GetWindow()))
 	return dialog
 }
 
