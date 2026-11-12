@@ -3,6 +3,7 @@ package components
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/url"
 
 	"fyne.io/fyne/v2"
@@ -136,27 +137,52 @@ func renderMappedPort(t client.RemoteAccessTarget, sshUser string) string {
 	}
 }
 
-func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasObject {
-
+// isCustomTarget reports whether the target uses a TCP port that isn't one of the
+// predefined services, i.e. it was set up with the "custom" type.
+func isCustomTarget(t client.RemoteAccessTarget) bool {
 	if t.Protocol == "udp" {
+		return false
+	}
+	for _, port := range servicePortMap {
+		if port == t.RemotePort {
+			return false
+		}
+	}
+	return true
+}
+
+// browserURL returns the URL to open in a browser for the target. HTTP and HTTPS use their
+// own scheme; custom ports are assumed to serve plain HTTP. Other services (SSH, RDP, VNC)
+// and UDP targets can't be opened in a browser.
+func browserURL(t client.RemoteAccessTarget) (string, bool) {
+	switch {
+	case t.Protocol == "udp":
+		return "", false
+	case t.RemotePort == serviceHTTPPort || t.RemotePort == serviceHTTPSPort:
+		return renderMappedPort(t, ""), true
+	case isCustomTarget(t):
+		return "http://" + net.JoinHostPort(t.LocalHost, t.LocalPort), true
+	default:
+		return "", false
+	}
+}
+
+func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasObject {
+	target, ok := browserURL(t)
+	if !ok {
 		return widget.NewLabel("")
 	}
 
-	switch t.RemotePort {
-	case "80", "443":
-		openURL := widgets.NewButtonPointer("", func() {
-			urlObj, err := url.Parse(renderMappedPort(t, ""))
-			if err != nil {
-				i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())
-				return
-			}
-			if err := i.GetFyneApp().OpenURL(urlObj); err != nil {
-				i.DisplayError("Open URL failed", "Failed to open URL: "+err.Error())
-			}
-		})
-		openURL.SetIcon(theme.MailSendIcon())
-		return openURL
-	default:
-		return widget.NewLabel("")
-	}
+	openURL := widgets.NewButtonPointer("", func() {
+		urlObj, err := url.Parse(target)
+		if err != nil {
+			i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())
+			return
+		}
+		if err := i.GetFyneApp().OpenURL(urlObj); err != nil {
+			i.DisplayError("Open URL failed", "Failed to open URL: "+err.Error())
+		}
+	})
+	openURL.SetIcon(theme.MailSendIcon())
+	return openURL
 }
