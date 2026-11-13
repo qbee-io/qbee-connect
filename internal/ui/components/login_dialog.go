@@ -32,6 +32,8 @@ type pollData struct {
 
 var authErr error
 
+// NewLoginDialog starts the OAuth2 device authorization flow and shows the login dialog with the
+// verification link and user code
 func NewLoginDialog(ld loginDelegate) {
 	deviceAuth, err := ld.GetClient().OAuth2DeviceAuthorizationRequest(ld.GetContext())
 	if err != nil {
@@ -68,7 +70,7 @@ func NewLoginDialog(ld loginDelegate) {
 	go func() {
 		iter := 0
 		for !pollData.stopped {
-			iter += 1
+			iter++
 
 			fyne.Do(func() {
 				loaderLabel.SetText(fmt.Sprintf("Waiting for authentication%s", strings.Repeat(".", iter%4)))

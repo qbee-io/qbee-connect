@@ -17,6 +17,7 @@ import (
 type infoDelegate interface {
 	GetFyneApp() fyne.App
 	GetStore() *service.ConnectionStore
+	GetPreferences() *service.PreferencesStore
 	GetWindow() fyne.Window
 	DisplayError(title, msg string)
 	GetDeviceTitle(device *client.InventoryListItem) string
@@ -26,6 +27,7 @@ type infoDelegate interface {
 func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widget.PopUp {
 
 	targetInfo, ok := d.GetStore().GetActive(device.NodeID)
+	sshUser := d.GetPreferences().Get().DefaultSSHUserName
 	infoContainer := container.NewVBox(
 		widget.NewLabel("Target information: " + d.GetDeviceTitle(device)),
 	)
@@ -42,7 +44,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 		for _, t := range targetInfo.Targets {
 			targetString := fmt.Sprintf("**%s**: %s:%s => %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
 
-			mappedPort := renderMappedPort(t)
+			mappedPort := renderMappedPort(t, sshUser)
 			openAction := getOpenURLButton(d, t)
 
 			copyToClipboardBtn := widgets.NewButtonPointer("", func() {
@@ -85,14 +87,23 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 	return dialog
 }
 
-func renderMappedPort(t client.RemoteAccessTarget) string {
+// renderSSHCommand returns the ssh command for a target, including the user name if set
+func renderSSHCommand(t client.RemoteAccessTarget, sshUser string) string {
+	host := t.LocalHost
+	if sshUser != "" {
+		host = sshUser + "@" + host
+	}
+	return "ssh -p " + t.LocalPort + " " + host
+}
+
+func renderMappedPort(t client.RemoteAccessTarget, sshUser string) string {
 	if t.Protocol == "udp" {
 		return t.LocalPort
 	}
 
 	switch t.RemotePort {
 	case "22":
-		return "ssh -p " + t.LocalPort + " " + t.LocalHost
+		return renderSSHCommand(t, sshUser)
 	case "3389":
 		return "mstsc /v:" + t.LocalHost + ":" + t.LocalPort
 	case "80", "443":
@@ -116,7 +127,7 @@ func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasOb
 	switch t.RemotePort {
 	case "80", "443":
 		openURL := widgets.NewButtonPointer("", func() {
-			urlObj, err := url.Parse(renderMappedPort(t))
+			urlObj, err := url.Parse(renderMappedPort(t, ""))
 			if err != nil {
 				i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())
 				return

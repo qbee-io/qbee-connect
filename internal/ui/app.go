@@ -52,6 +52,9 @@ type App struct {
 	// store is the connection store
 	store *service.ConnectionStore
 
+	// prefs is the user preferences store
+	prefs *service.PreferencesStore
+
 	// mainContent holds the main content of the application
 	mainContent fyne.CanvasObject
 
@@ -111,6 +114,11 @@ func NewApp(icon []byte) *App {
 		log.Fatalln("failed to initialize connection store:", err)
 	}
 
+	prefs, err := service.NewPreferencesStore(a.Storage())
+	if err != nil {
+		log.Fatalln("failed to initialize preferences store:", err)
+	}
+
 	cli, err := client.LoginGetAuthenticatedClient(ctx)
 	if err != nil {
 		cli = client.New()
@@ -133,6 +141,7 @@ func NewApp(icon []byte) *App {
 		cli:           cli,
 		ctx:           ctx,
 		store:         store,
+		prefs:         prefs,
 		deviceModel:   model.NewDeviceModel(),
 		pageInfoLabel: widget.NewLabel("Page 1 / 1"),
 		icon:          icon,
@@ -144,6 +153,9 @@ func (app *App) GetDeviceModel() *model.DeviceModel { return app.deviceModel }
 
 // GetStore returns the connection store
 func (app *App) GetStore() *service.ConnectionStore { return app.store }
+
+// GetPreferences returns the user preferences store
+func (app *App) GetPreferences() *service.PreferencesStore { return app.prefs }
 
 // GetClient returns the authenticated client
 func (app *App) GetClient() *client.Client { return app.cli }
@@ -174,7 +186,7 @@ func (app *App) Run() {
 	app.MakeTray()
 	app.deviceList = components.NewDeviceTable(app)
 
-	menu := components.MakeMenu()
+	menu := components.MakeMenu(app)
 	app.mainWin.SetMainMenu(menu)
 
 	filterActive := widget.NewCheck("Open tunnels on page", func(checked bool) {
@@ -277,7 +289,7 @@ func (app *App) Run() {
 	app.mainWin.ShowAndRun()
 }
 
-// RefreshUI() refreshes the UI with device data
+// RefreshUI refreshes the UI with device data
 func (app *App) RefreshUI() {
 	app.LoadDevicesAndRefreshUI(true)
 }
@@ -287,7 +299,7 @@ func (app *App) RefreshUINoLoad() {
 	app.LoadDevicesAndRefreshUI(false)
 }
 
-// RefreshUI fetches device data and refreshes the UI
+// LoadDevicesAndRefreshUI refreshes the UI, fetching device data first if loadDevices is true
 func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 	// If the main window is not visible, skip the refresh
 	if !app.mainWindowVisible.Load() {

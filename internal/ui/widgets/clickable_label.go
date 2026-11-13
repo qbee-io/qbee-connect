@@ -6,13 +6,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// Define the custom struct
+// ClickableLabel is a label that calls OnTap when tapped and shows a pointer cursor on hover
 type ClickableLabel struct {
 	widget.Label
 	OnTap func()
 }
 
-// Create a constructor
+// NewClickableLabel creates a ClickableLabel with the given text and tap handler
 func NewClickableLabel(text string, tapped func()) *ClickableLabel {
 	l := &ClickableLabel{}
 	l.ExtendBaseWidget(l) // Important for custom widgets
@@ -21,14 +21,14 @@ func NewClickableLabel(text string, tapped func()) *ClickableLabel {
 	return l
 }
 
-// Implement the Tapped method (from fyne.Tappable interface)
+// Tapped calls OnTap, if set (implements fyne.Tappable)
 func (l *ClickableLabel) Tapped(_ *fyne.PointEvent) {
 	if l.OnTap != nil {
 		l.OnTap()
 	}
 }
 
-// Implement the Cursor method (from desktop.Hoverable interface)
-func (m *ClickableLabel) Cursor() desktop.Cursor {
+// Cursor returns the pointer cursor (implements desktop.Cursorable)
+func (l *ClickableLabel) Cursor() desktop.Cursor {
 	return desktop.PointerCursor
 }
