@@ -278,7 +278,6 @@ func networkFields(inv *client.DeviceInventory) []infoField {
 	f = appendField(f, "Hostname", host)
 	f = appendField(f, "Default interface", s.Interface)
 	f = appendField(f, "Primary IPv4", s.IPv4First)
-	f = appendField(f, "All IP addresses", strings.Join(strings.Fields(s.IPAddresses), ", "))
 	f = appendField(f, "Remote address", s.RemoteAddress)
 
 	return f

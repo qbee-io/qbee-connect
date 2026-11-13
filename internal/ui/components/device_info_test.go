@@ -118,7 +118,6 @@ func TestFormatDeviceInfo(t *testing.T) {
 		"System\n",
 		"  Architecture: mips\n",
 		"Network\n",
-		"  All IP addresses: 192.168.1.244, 100.64.0.1\n",
 		"  wlan0.1: ipv4=- mac=08:bf:b8:e6:bf:8c state=down\n",
 	} {
 		if !strings.Contains(text, want) {
