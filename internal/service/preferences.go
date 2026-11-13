@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sync"
 
@@ -11,6 +12,20 @@ import (
 )
 
 const preferencesFileName = "preferences.json"
+
+// sshUserNamePattern restricts SSH user names to characters that are safe to paste
+// unquoted into a shell command. A leading '-' is rejected so the value can't be
+// interpreted as an ssh option.
+var sshUserNamePattern = regexp.MustCompile(`^[A-Za-z0-9_.][A-Za-z0-9_.-]*$`)
+
+// ValidateSSHUserName returns an error if name is not a supported SSH user name.
+// An empty name is valid and means no user name is set.
+func ValidateSSHUserName(name string) error {
+	if name == "" || sshUserNamePattern.MatchString(name) {
+		return nil
+	}
+	return fmt.Errorf("invalid SSH user name %q: only letters, digits, '.', '_' and '-' are allowed, and it must not start with '-'", name)
+}
 
 // Preferences holds user preferences persisted to disk
 type Preferences struct {
@@ -53,11 +68,14 @@ func (ps *PreferencesStore) Get() Preferences {
 	return ps.prefs
 }
 
-// Save updates the preferences and persists them to disk
+// Save persists the preferences to disk and, only if that succeeds, makes them current
 func (ps *PreferencesStore) Save(p Preferences) error {
+	if err := ValidateSSHUserName(p.DefaultSSHUserName); err != nil {
+		return err
+	}
+
 	ps.mutex.Lock()
-	ps.prefs = p
-	ps.mutex.Unlock()
+	defer ps.mutex.Unlock()
 
 	// Attempt to save to the existing file; fall back to creating it if it doesn't exist.
 	w, err := ps.storage.Save(preferencesFileName)
@@ -67,9 +85,17 @@ func (ps *PreferencesStore) Save(p Preferences) error {
 	if err != nil {
 		return fmt.Errorf("error saving %s: %w", ps.path(), err)
 	}
-	defer func() { _ = w.Close() }()
 
-	return json.NewEncoder(w).Encode(p)
+	if err := json.NewEncoder(w).Encode(p); err != nil {
+		_ = w.Close()
+		return fmt.Errorf("error writing %s: %w", ps.path(), err)
+	}
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("error writing %s: %w", ps.path(), err)
+	}
+
+	ps.prefs = p
+	return nil
 }
 
 func (ps *PreferencesStore) path() string {

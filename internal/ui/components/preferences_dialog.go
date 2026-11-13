@@ -26,6 +26,9 @@ func NewPreferencesDialog(d preferencesDelegate) *widget.PopUp {
 	sshUserEntry := widget.NewEntry()
 	sshUserEntry.SetPlaceHolder("e.g. root")
 	sshUserEntry.SetText(prefs.DefaultSSHUserName)
+	sshUserEntry.Validator = func(s string) error {
+		return service.ValidateSSHUserName(strings.TrimSpace(s))
+	}
 
 	form := widget.NewForm(
 		widget.NewFormItem("Default SSH user name", sshUserEntry),
