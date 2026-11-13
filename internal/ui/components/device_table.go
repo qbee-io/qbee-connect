@@ -25,6 +25,7 @@ type tableDelegate interface {
 	GetDeviceTitle(item *client.InventoryListItem) string
 }
 
+// Device connection statuses as reported by the backend
 const (
 	StatusOnline       = "online"
 	StatusDelayed      = "delayed"

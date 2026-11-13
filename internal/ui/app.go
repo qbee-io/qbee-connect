@@ -289,7 +289,7 @@ func (app *App) Run() {
 	app.mainWin.ShowAndRun()
 }
 
-// RefreshUI() refreshes the UI with device data
+// RefreshUI refreshes the UI with device data
 func (app *App) RefreshUI() {
 	app.LoadDevicesAndRefreshUI(true)
 }
@@ -299,7 +299,7 @@ func (app *App) RefreshUINoLoad() {
 	app.LoadDevicesAndRefreshUI(false)
 }
 
-// RefreshUI fetches device data and refreshes the UI
+// LoadDevicesAndRefreshUI refreshes the UI, fetching device data first if loadDevices is true
 func (app *App) LoadDevicesAndRefreshUI(loadDevices bool) {
 	// If the main window is not visible, skip the refresh
 	if !app.mainWindowVisible.Load() {

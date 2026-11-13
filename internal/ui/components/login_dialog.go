@@ -32,6 +32,8 @@ type pollData struct {
 
 var authErr error
 
+// NewLoginDialog starts the OAuth2 device authorization flow and shows the login dialog with the
+// verification link and user code
 func NewLoginDialog(ld loginDelegate) {
 	deviceAuth, err := ld.GetClient().OAuth2DeviceAuthorizationRequest(ld.GetContext())
 	if err != nil {

@@ -26,6 +26,8 @@ func NewActiveConnections(a activeConnectionsDelegate) *fyne.Container {
 	return root
 }
 
+// UpdateActiveConnectionsView rebuilds the active connections view from the current set of
+// active connections in the store
 func UpdateActiveConnectionsView(a activeConnectionsDelegate, activeView fyne.CanvasObject) {
 
 	root, ok := activeView.(*fyne.Container)
