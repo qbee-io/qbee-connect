@@ -38,7 +38,7 @@ func MakeMenu(d preferencesDelegate) *fyne.MainMenu {
 	return fyne.NewMainMenu(mainMenu)
 }
 
-const docsUrl = "https://docs.qbee.io/qbee-connect.html"
+const docsURL = "https://docs.qbee.io/qbee-connect.html"
 const supportEmail = "support@qbee.io"
 
 var aboutText = `**qbee-connect**
@@ -66,7 +66,7 @@ func newAbout() fyne.CanvasObject {
 		Version: fyne.CurrentApp().Metadata().Version,
 		Build:   fyne.CurrentApp().Metadata().Build,
 		Year:    time.Now().Year(),
-		DocURL:  docsUrl,
+		DocURL:  docsURL,
 		Email:   supportEmail,
 	}
 

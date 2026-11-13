@@ -70,7 +70,7 @@ func NewLoginDialog(ld loginDelegate) {
 	go func() {
 		iter := 0
 		for !pollData.stopped {
-			iter += 1
+			iter++
 
 			fyne.Do(func() {
 				loaderLabel.SetText(fmt.Sprintf("Waiting for authentication%s", strings.Repeat(".", iter%4)))
