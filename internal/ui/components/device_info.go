@@ -141,8 +141,8 @@ func newDeviceInfoContent(app fyne.App, inv *client.DeviceInventory, reload func
 	toolbar := container.NewHBox(layout.NewSpacer(), refreshBtn, copyBtn)
 
 	body := container.NewVBox(
-		newInfoSection("System", newInfoColumns(systemFields(inv))),
-		newInfoSection("Network", newInfoColumns(networkFields(inv))),
+		newInfoSection("System", newInfoColumns(systemColumns(inv))),
+		newInfoSection("Network", newInfoColumns(splitFields(networkFields(inv)))),
 	)
 	if rows := interfaceRows(inv.SystemInfo); len(rows) > 0 {
 		body.Add(newInfoSection("Interfaces", newInterfacesTable(rows)))
@@ -158,14 +158,13 @@ func newInfoSection(title string, content fyne.CanvasObject) fyne.CanvasObject {
 	return container.NewVBox(heading, widget.NewSeparator(), content)
 }
 
-// newInfoColumns renders the fields as two forms side by side, so a section uses the full
-// width of the dialog. Fields fill the left column first, keeping related fields together.
-func newInfoColumns(fields []infoField) fyne.CanvasObject {
-	if len(fields) == 0 {
+// newInfoColumns renders the left and right fields as two forms side by side, so a section
+// uses the full width of the dialog.
+func newInfoColumns(left, right []infoField) fyne.CanvasObject {
+	if len(left) == 0 && len(right) == 0 {
 		return widget.NewLabel("Nothing reported")
 	}
 
-	left, right := splitFields(fields)
 	return container.NewGridWithColumns(2,
 		container.NewVBox(newInfoForm(left)),
 		container.NewVBox(newInfoForm(right)),
@@ -233,36 +232,36 @@ func appendField(fields []infoField, label, value string) []infoField {
 	return append(fields, infoField{label, value})
 }
 
-// systemFields returns the machine related fields of the device inventory
-func systemFields(inv *client.DeviceInventory) []infoField {
+// systemColumns returns the machine related fields of the device inventory, split into the
+// two columns of the System section: OS and kernel on the left, agent, CPU, boot time, config
+// update and device attributes on the right.
+func systemColumns(inv *client.DeviceInventory) (left, right []infoField) {
 	s := inv.SystemInfo
-	var f []infoField
 
-	f = appendField(f, "Operating system", s.OS)
-	f = appendField(f, "OS type", s.OSType)
-	f = appendField(f, "Flavor", s.Flavor)
-	f = appendField(f, "Architecture", s.Architecture)
-	f = appendField(f, "Kernel release", s.Release)
-	f = appendField(f, "Kernel version", s.Version)
-	f = appendField(f, "Number of CPUs", s.CPUs)
-	f = appendField(f, "CPU hardware", s.CPUHardware)
-	f = appendField(f, "CPU revision", s.CPURevision)
-	f = appendField(f, "CPU serial number", s.CPUSerialNumber)
-	f = appendField(f, "Boot time", formatUnixString(s.BootTime))
-	f = appendField(f, "Agent version", s.AgentVersion)
-	// Only show TPM state when the agent reported, otherwise "disabled" could be misleading
-	if s.AgentVersion != "" {
-		tpm := "disabled"
-		if s.TPMEnabled {
-			tpm = "enabled"
-		}
-		f = appendField(f, "TPM", tpm)
-	}
-	f = appendField(f, "Last config update", formatTimestamp(s.LastConfigUpdate))
-	f = appendField(f, "Description", inv.Attributes.Description)
-	f = appendField(f, "Location", formatLocation(inv.Attributes))
+	left = appendField(left, "Operating system", s.OS)
+	left = appendField(left, "OS type", s.OSType)
+	left = appendField(left, "Flavor", s.Flavor)
+	left = appendField(left, "Architecture", s.Architecture)
+	left = appendField(left, "Kernel release", s.Release)
+	left = appendField(left, "Kernel version", s.Version)
 
-	return f
+	right = appendField(right, "Agent version", s.AgentVersion)
+	right = appendField(right, "Number of CPUs", s.CPUs)
+	right = appendField(right, "CPU hardware", s.CPUHardware)
+	right = appendField(right, "CPU revision", s.CPURevision)
+	right = appendField(right, "CPU serial number", s.CPUSerialNumber)
+	right = appendField(right, "Boot time", formatUnixString(s.BootTime))
+	right = appendField(right, "Last config update", formatTimestamp(s.LastConfigUpdate))
+	right = appendField(right, "Description", inv.Attributes.Description)
+	right = appendField(right, "Location", formatLocation(inv.Attributes))
+
+	return left, right
+}
+
+// systemFields returns the machine related fields of the device inventory in display order
+func systemFields(inv *client.DeviceInventory) []infoField {
+	left, right := systemColumns(inv)
+	return append(left, right...)
 }
 
 // networkFields returns the network related summary fields of the device inventory

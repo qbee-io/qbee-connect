@@ -89,7 +89,7 @@ func TestSystemFieldsSkipsEmpty(t *testing.T) {
 		labels[f.label] = f.value
 	}
 
-	for _, label := range []string{"CPU hardware", "CPU serial number", "TPM", "Description", "Location"} {
+	for _, label := range []string{"CPU hardware", "CPU serial number", "Description", "Location"} {
 		if _, ok := labels[label]; ok {
 			t.Errorf("expected empty field %q to be hidden", label)
 		}
@@ -144,5 +144,31 @@ func TestSplitFields(t *testing.T) {
 		if n > 1 && (left[0].label != "a" || right[0].label != string(rune('a'+len(left)))) {
 			t.Errorf("splitFields(%d) did not keep reading order: left[0]=%q right[0]=%q", n, left[0].label, right[0].label)
 		}
+	}
+}
+
+func TestSystemColumns(t *testing.T) {
+	inv := testInventory()
+	inv.SystemInfo.AgentVersion = "2026.45"
+	inv.SystemInfo.CPUHardware = "MT7621"
+	inv.SystemInfo.TPMEnabled = true
+
+	left, right := systemColumns(inv)
+	labels := func(fields []infoField) []string {
+		var l []string
+		for _, f := range fields {
+			l = append(l, f.label)
+		}
+		return l
+	}
+
+	if got := labels(left); !slices.Equal(got, []string{"Operating system", "OS type", "Architecture", "Kernel release"}) {
+		t.Errorf("unexpected left column: %v", got)
+	}
+	if got := labels(right); !slices.Equal(got, []string{"Agent version", "Number of CPUs", "CPU hardware", "Boot time"}) {
+		t.Errorf("unexpected right column: %v", got)
+	}
+	if slices.Contains(append(labels(left), labels(right)...), "TPM") {
+		t.Error("TPM should not be shown")
 	}
 }
