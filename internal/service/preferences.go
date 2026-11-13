@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -56,6 +57,13 @@ func NewPreferencesStore(s fyne.Storage) (*PreferencesStore, error) {
 
 	if err := json.NewDecoder(r).Decode(&ps.prefs); err != nil {
 		return nil, fmt.Errorf("error loading %s: %w", ps.path(), err)
+	}
+
+	// The file may have been edited by hand, so apply the same validation as Save. An invalid
+	// user name is discarded rather than failing startup, so it never reaches an SSH command.
+	if err := ValidateSSHUserName(ps.prefs.DefaultSSHUserName); err != nil {
+		log.Printf("ignoring default SSH user name from %s: %v", ps.path(), err)
+		ps.prefs.DefaultSSHUserName = ""
 	}
 
 	return ps, nil

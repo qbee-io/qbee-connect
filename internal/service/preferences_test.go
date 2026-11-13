@@ -59,3 +59,29 @@ func TestPreferencesStoreSaveInvalidKeepsCurrent(t *testing.T) {
 		t.Fatalf("expected preferences to remain %q after failed save, got %q", "root", got)
 	}
 }
+
+func TestPreferencesStoreLoadDiscardsInvalidUserName(t *testing.T) {
+	s := test.NewTempApp(t).Storage()
+
+	w, err := s.Save(preferencesFileName)
+	if err != nil {
+		w, err = s.Create(preferencesFileName)
+	}
+	if err != nil {
+		t.Fatalf("opening %s for writing: %v", preferencesFileName, err)
+	}
+	if _, err := w.Write([]byte(`{"default_ssh_user_name": "$(id)"}`)); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+
+	ps, err := NewPreferencesStore(s)
+	if err != nil {
+		t.Fatalf("NewPreferencesStore: %v", err)
+	}
+	if got := ps.Get().DefaultSSHUserName; got != "" {
+		t.Fatalf("expected invalid user name to be discarded, got %q", got)
+	}
+}
