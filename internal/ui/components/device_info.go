@@ -74,7 +74,8 @@ func newDeviceInfoView(d deviceInfoDelegate, nodeID string) (fyne.CanvasObject, 
 			return
 		}
 		loading = true
-		content.Objects = []fyne.CanvasObject{newDeviceInfoLoading()}
+		loadingView, progress := newDeviceInfoLoading()
+		content.Objects = []fyne.CanvasObject{loadingView}
 		content.Refresh()
 
 		go func() {
@@ -83,6 +84,9 @@ func newDeviceInfoView(d deviceInfoDelegate, nodeID string) (fyne.CanvasObject, 
 			inv, err := d.GetClient().GetDeviceInventory(ctx, nodeID)
 
 			fyne.Do(func() {
+				// Stop the animation before the loading view is replaced, so it doesn't keep
+				// running off-screen.
+				progress.Stop()
 				loading = false
 				if err != nil {
 					content.Objects = []fyne.CanvasObject{newDeviceInfoError(err, load)}
@@ -102,11 +106,14 @@ func newDeviceInfoView(d deviceInfoDelegate, nodeID string) (fyne.CanvasObject, 
 	return content, load
 }
 
-func newDeviceInfoLoading() fyne.CanvasObject {
+// newDeviceInfoLoading returns the loading view and its progress bar, which the caller
+// must stop when the view is replaced.
+func newDeviceInfoLoading() (fyne.CanvasObject, *widget.ProgressBarInfinite) {
+	progress := widget.NewProgressBarInfinite()
 	return container.NewCenter(container.NewVBox(
-		widget.NewProgressBarInfinite(),
+		progress,
 		widget.NewLabelWithStyle("Loading device information…", fyne.TextAlignCenter, fyne.TextStyle{}),
-	))
+	)), progress
 }
 
 func newDeviceInfoError(err error, retry func()) fyne.CanvasObject {

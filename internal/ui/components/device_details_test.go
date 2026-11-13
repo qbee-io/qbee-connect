@@ -1,7 +1,11 @@
 package components
 
 import (
+	"strings"
 	"testing"
+
+	"fyne.io/fyne/v2/test"
+	"go.qbee.io/client"
 )
 
 func TestIsVirtualInterface(t *testing.T) {
@@ -12,5 +16,17 @@ func TestIsVirtualInterface(t *testing.T) {
 		if got := isVirtualInterface(name); got != want {
 			t.Errorf("isVirtualInterface(%q) = %v, want %v", name, got, want)
 		}
+	}
+}
+
+func TestDeviceDetailsLongTitleDoesNotWidenHeader(t *testing.T) {
+	test.NewTempApp(t)
+	device := &client.InventoryListItem{}
+
+	short := newDeviceDetails("dev", device).MinSize().Width
+	long := newDeviceDetails(strings.Repeat("very-long-device-name-", 20), device).MinSize().Width
+
+	if long > short {
+		t.Errorf("header min width grew with title length: %v > %v", long, short)
 	}
 }

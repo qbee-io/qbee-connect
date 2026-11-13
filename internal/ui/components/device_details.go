@@ -27,6 +27,8 @@ func newTitleWithLastReported(title fyne.CanvasObject, device *client.InventoryL
 // newDeviceDetails renders the dialog heading: status icon, device name and last reported time.
 func newDeviceDetails(deviceTitle string, device *client.InventoryListItem) fyne.CanvasObject {
 	title := widget.NewLabelWithStyle(deviceTitle, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	// Truncate so a long device name can't push the header (and dialog) wider than the window.
+	title.Truncation = fyne.TextTruncateEllipsis
 	return newTitleWithLastReported(title, device)
 }
 
