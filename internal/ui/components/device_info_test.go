@@ -126,3 +126,23 @@ func TestFormatDeviceInfo(t *testing.T) {
 		}
 	}
 }
+
+func TestSplitFields(t *testing.T) {
+	fields := func(n int) []infoField {
+		f := make([]infoField, n)
+		for i := range f {
+			f[i] = infoField{label: string(rune('a' + i))}
+		}
+		return f
+	}
+
+	for n, want := range map[int][2]int{0: {0, 0}, 1: {1, 0}, 2: {1, 1}, 5: {3, 2}, 6: {3, 3}} {
+		left, right := splitFields(fields(n))
+		if len(left) != want[0] || len(right) != want[1] {
+			t.Errorf("splitFields(%d) = %d/%d, want %d/%d", n, len(left), len(right), want[0], want[1])
+		}
+		if n > 1 && (left[0].label != "a" || right[0].label != string(rune('a'+len(left)))) {
+			t.Errorf("splitFields(%d) did not keep reading order: left[0]=%q right[0]=%q", n, left[0].label, right[0].label)
+		}
+	}
+}

@@ -125,8 +125,8 @@ func newDeviceInfoError(err error, retry func()) fyne.CanvasObject {
 	return container.NewCenter(container.NewVBox(msg, container.NewCenter(retryBtn)))
 }
 
-// newDeviceInfoContent renders the System and Network sections side by side, followed by a
-// table of all network interfaces.
+// newDeviceInfoContent renders the System and Network sections on top of each other, each with
+// its fields in two columns, followed by a table of all network interfaces.
 func newDeviceInfoContent(app fyne.App, inv *client.DeviceInventory, reload func()) fyne.CanvasObject {
 	copyBtn := widgets.NewButtonPointer("Copy all", func() {
 		app.Clipboard().SetContent(formatDeviceInfo(inv))
@@ -140,13 +140,10 @@ func newDeviceInfoContent(app fyne.App, inv *client.DeviceInventory, reload func
 
 	toolbar := container.NewHBox(layout.NewSpacer(), refreshBtn, copyBtn)
 
-	// System and Network side by side, like the web app; both start at the top
-	sections := container.NewGridWithColumns(2,
-		container.NewVBox(newInfoSection("System", newInfoForm(systemFields(inv)))),
-		container.NewVBox(newInfoSection("Network", newInfoForm(networkFields(inv)))),
+	body := container.NewVBox(
+		newInfoSection("System", newInfoColumns(systemFields(inv))),
+		newInfoSection("Network", newInfoColumns(networkFields(inv))),
 	)
-
-	body := container.NewVBox(sections)
 	if rows := interfaceRows(inv.SystemInfo); len(rows) > 0 {
 		body.Add(newInfoSection("Interfaces", newInterfacesTable(rows)))
 	}
@@ -161,12 +158,29 @@ func newInfoSection(title string, content fyne.CanvasObject) fyne.CanvasObject {
 	return container.NewVBox(heading, widget.NewSeparator(), content)
 }
 
-// newInfoForm renders the fields as a two-column form with selectable values
-func newInfoForm(fields []infoField) fyne.CanvasObject {
+// newInfoColumns renders the fields as two forms side by side, so a section uses the full
+// width of the dialog. Fields fill the left column first, keeping related fields together.
+func newInfoColumns(fields []infoField) fyne.CanvasObject {
 	if len(fields) == 0 {
 		return widget.NewLabel("Nothing reported")
 	}
 
+	left, right := splitFields(fields)
+	return container.NewGridWithColumns(2,
+		container.NewVBox(newInfoForm(left)),
+		container.NewVBox(newInfoForm(right)),
+	)
+}
+
+// splitFields splits the fields into two columns in reading order. The left column gets the
+// extra field when the count is odd.
+func splitFields(fields []infoField) (left, right []infoField) {
+	half := (len(fields) + 1) / 2
+	return fields[:half], fields[half:]
+}
+
+// newInfoForm renders the fields as a label/value form with selectable values
+func newInfoForm(fields []infoField) fyne.CanvasObject {
 	form := widget.NewForm()
 	for _, f := range fields {
 		value := widget.NewLabel(f.value)
