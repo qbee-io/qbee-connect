@@ -145,7 +145,9 @@ func newDeviceInfoContent(app fyne.App, inv *client.DeviceInventory, reload func
 		newInfoSection("Network", newInfoColumns(splitFields(networkFields(inv)))),
 	)
 	if rows := interfaceRows(inv.SystemInfo); len(rows) > 0 {
-		body.Add(newInfoSection("Interfaces", newInterfacesTable(rows)))
+		// No heading: the table's column headers already identify it
+		body.Add(widget.NewSeparator())
+		body.Add(newInterfacesTable(rows))
 	}
 
 	return container.NewBorder(toolbar, nil, nil, nil, container.NewVScroll(body))
