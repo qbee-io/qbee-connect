@@ -1,6 +1,7 @@
 package components
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -16,6 +17,8 @@ import (
 
 type infoDelegate interface {
 	GetFyneApp() fyne.App
+	GetClient() *client.Client
+	GetContext() context.Context
 	GetStore() *service.ConnectionStore
 	GetPreferences() *service.PreferencesStore
 	GetWindow() fyne.Window
@@ -28,11 +31,12 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 
 	targetInfo, ok := d.GetStore().GetActive(device.NodeID)
 	sshUser := d.GetPreferences().Get().DefaultSSHUserName
-	infoContainer := container.NewVBox(
-		widget.NewLabel("Target information: " + d.GetDeviceTitle(device)),
-	)
+	header := newDeviceDetails(d.GetDeviceTitle(device), device)
+	infoContainer := container.NewVBox()
 
-	if ok {
+	if !ok {
+		infoContainer.Add(widget.NewLabel("No active connections"))
+	} else {
 
 		infoContainer.Add(container.NewAdaptiveGrid(
 			3,
@@ -75,16 +79,30 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 		widgets.NewButtonPointer("Close", func() { dialog.Hide() }),
 	)
 
+	connectionsTab := container.NewTabItemWithIcon("Connections", theme.LoginIcon(),
+		container.NewVScroll(infoContainer))
+	tabs := newDeviceTabs(d, device, connectionsTab)
+
 	dialogContent := container.NewBorder(
-		infoContainer,
+		header,
 		footer,
 		nil, nil,
-		widget.NewCard("", "", container.NewWithoutLayout()),
+		tabs,
 	)
 
 	dialog = widget.NewModalPopUp(dialogContent, d.GetWindow().Canvas())
-	dialog.Resize(fyne.NewSize(800, 500))
+	dialog.Resize(deviceDialogSize(d.GetWindow()))
 	return dialog
+}
+
+// deviceDialogSize returns the size used for the device dialogs: large enough for the
+// device info tab, but never larger than the main window.
+func deviceDialogSize(w fyne.Window) fyne.Size {
+	const minWidth, minHeight = 800, 500
+	win := w.Canvas().Size()
+	width := min(max(minWidth, win.Width*0.9), win.Width)
+	height := min(max(minHeight, win.Height*0.9), win.Height)
+	return fyne.NewSize(width, height)
 }
 
 // renderSSHCommand returns the ssh command for a target, including the user name if set
