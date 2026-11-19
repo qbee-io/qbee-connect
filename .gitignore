@@ -33,4 +33,5 @@ connect
 dist/
 output/
 windows/bin
-windows/objcoverage.out
+windows/obj
+coverage.out
