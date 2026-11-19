@@ -34,3 +34,4 @@ dist/
 output/
 windows/bin
 windows/obj
+coverage.out

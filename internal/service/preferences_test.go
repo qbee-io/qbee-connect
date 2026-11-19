@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"fyne.io/fyne/v2/test"
+	"go.qbee.io/connect/internal/testutil"
 )
 
 func TestValidateSSHUserName(t *testing.T) {
@@ -23,7 +23,7 @@ func TestValidateSSHUserName(t *testing.T) {
 }
 
 func TestPreferencesStoreSaveAndLoad(t *testing.T) {
-	storage := test.NewTempApp(t).Storage()
+	storage := testutil.NewDirStorage(t)
 
 	ps, err := NewPreferencesStore(storage)
 	if err != nil {
@@ -44,7 +44,7 @@ func TestPreferencesStoreSaveAndLoad(t *testing.T) {
 }
 
 func TestPreferencesStoreSaveInvalidKeepsCurrent(t *testing.T) {
-	ps, err := NewPreferencesStore(test.NewTempApp(t).Storage())
+	ps, err := NewPreferencesStore(testutil.NewDirStorage(t))
 	if err != nil {
 		t.Fatalf("NewPreferencesStore: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestPreferencesStoreSaveInvalidKeepsCurrent(t *testing.T) {
 }
 
 func TestPreferencesStoreLoadDiscardsInvalidUserName(t *testing.T) {
-	s := test.NewTempApp(t).Storage()
+	s := testutil.NewDirStorage(t)
 
 	w, err := s.Save(preferencesFileName)
 	if err != nil {
@@ -83,5 +83,68 @@ func TestPreferencesStoreLoadDiscardsInvalidUserName(t *testing.T) {
 	}
 	if got := ps.Get().DefaultSSHUserName; got != "" {
 		t.Fatalf("expected invalid user name to be discarded, got %q", got)
+	}
+}
+
+func TestPreferencesStore_DefaultsWhenNoFile(t *testing.T) {
+	s := testutil.NewDirStorage(t)
+
+	ps, err := NewPreferencesStore(s)
+	if err != nil {
+		t.Fatalf("NewPreferencesStore: %v", err)
+	}
+	if got := ps.Get(); got != (Preferences{}) {
+		t.Fatalf("expected zero preferences, got %+v", got)
+	}
+	if s.ReadFile(t, preferencesFileName) != "" {
+		t.Fatal("loading must not create the preferences file")
+	}
+}
+
+func TestPreferencesStore_CorruptFileReturnsError(t *testing.T) {
+	s := testutil.NewDirStorage(t)
+	s.WriteFile(t, preferencesFileName, `not json`)
+
+	if _, err := NewPreferencesStore(s); err == nil {
+		t.Fatal("expected an error for a corrupt preferences file")
+	}
+}
+
+func TestPreferencesStore_SaveOverwritesExistingFile(t *testing.T) {
+	s := testutil.NewDirStorage(t)
+	ps, err := NewPreferencesStore(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := ps.Save(Preferences{DefaultSSHUserName: "a-much-longer-user-name"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := ps.Save(Preferences{DefaultSSHUserName: "root"}); err != nil {
+		t.Fatal(err)
+	}
+
+	reloaded, err := NewPreferencesStore(s)
+	if err != nil {
+		t.Fatalf("file is not valid after overwriting with shorter content: %v", err)
+	}
+	if got := reloaded.Get().DefaultSSHUserName; got != "root" {
+		t.Fatalf("reloaded user name = %q, want root", got)
+	}
+}
+
+func TestPreferencesStore_SaveEmptyClearsUserName(t *testing.T) {
+	ps, err := NewPreferencesStore(testutil.NewDirStorage(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ps.Save(Preferences{DefaultSSHUserName: "root"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := ps.Save(Preferences{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := ps.Get().DefaultSSHUserName; got != "" {
+		t.Fatalf("user name = %q, want cleared", got)
 	}
 }

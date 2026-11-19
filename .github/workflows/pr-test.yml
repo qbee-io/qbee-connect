@@ -1,4 +1,4 @@
-name: platform-pr-tests
+name: Test on Pull Requests
 permissions:
   contents: read
   pull-requests: write
@@ -29,7 +29,7 @@ jobs:
           go-package: ./...
 
       - name: golint
-        run: go run golang.org/x/lint/golint@latest ./...
+        run: go run golang.org/x/lint/golint@latest -set_exit_status ./...
 
-      - name: govet
-        run: go vet ./...
+      - name: test
+        run: go test -race -coverprofile=coverage.out ./...

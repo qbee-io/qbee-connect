@@ -78,7 +78,7 @@ func newDeviceInfoView(d deviceInfoDelegate, nodeID string) (fyne.CanvasObject, 
 		content.Objects = []fyne.CanvasObject{loadingView}
 		content.Refresh()
 
-		go func() {
+		runInBackground(func() {
 			ctx, cancel := context.WithTimeout(d.GetContext(), deviceInfoTimeout)
 			defer cancel()
 			inv, err := d.GetClient().GetDeviceInventory(ctx, nodeID)
@@ -100,11 +100,16 @@ func newDeviceInfoView(d deviceInfoDelegate, nodeID string) (fyne.CanvasObject, 
 				}
 				content.Refresh()
 			})
-		}()
+		})
 	}
 
 	return content, load
 }
+
+// runInBackground runs f on a new goroutine. Tests replace it to run f synchronously: fyne's
+// test driver executes fyne.Do callbacks inline on the calling goroutine, so a real background
+// goroutine would race with the test inspecting the UI.
+var runInBackground = func(f func()) { go f() }
 
 // newDeviceInfoLoading returns the loading view and its progress bar, which the caller
 // must stop when the view is replaced.
