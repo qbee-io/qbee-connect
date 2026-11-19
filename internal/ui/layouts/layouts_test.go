@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-var _ fyne.Tappable = (*blocker)(nil)
+var _ fyne.Tappable = (*Blocker)(nil)
 
 func TestBlocker_ConsumesTaps(t *testing.T) {
 	test.NewTempApp(t)

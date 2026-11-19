@@ -10,7 +10,7 @@ import (
 
 const tagsListPath = "/api/v2/tagslist"
 
-// GetAllGroups fetches all groups from the backend
+// GetGroups fetches all groups from the backend
 func (app *App) GetGroups() *client.GroupTree {
 	var allGroups *client.GroupTree
 	var err error
@@ -27,7 +27,7 @@ func (app *App) GetGroups() *client.GroupTree {
 	return allGroups
 }
 
-// GetAllTags fetches all tags from the backend
+// GetTags fetches all tags from the backend
 func (app *App) GetTags() []string {
 	var allTags []string
 	var err error

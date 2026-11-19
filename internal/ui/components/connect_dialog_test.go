@@ -305,7 +305,7 @@ func TestNewConnectDialog_NewDevice(t *testing.T) {
 		t.Fatal("dialog should be visible after Show")
 	}
 	if _, ok := testutil.Find(dialog, func(l *widget.Label) bool {
-		return l.Text == "Configure port forwarding: title:gw"
+		return l.Text == "title:gw" && l.TextStyle.Bold
 	}); !ok {
 		t.Error("dialog header with device title not found")
 	}
@@ -381,4 +381,32 @@ func TestNewConnectDialog_SaveAndConnect(t *testing.T) {
 	eventually(t, func() bool { return contains(d.errorTitles(), "Connection Error") }, "connection error displayed")
 	eventually(t, func() bool { _, active := d.store.GetActive("dev-1"); return !active }, "active connection removed")
 	eventually(t, func() bool { _, noLoad := d.refreshes(); return noLoad >= 2 }, "UI refreshed after save and after disconnect")
+}
+
+func TestNewConnectDialog_HasConnectAndDeviceInfoTabs(t *testing.T) {
+	d := newFakeDelegate(t)
+	dialog := NewConnectDialog(d, &client.InventoryListItem{NodeID: "dev-1", Title: "gw"})
+	dialog.Show()
+
+	tabs, ok := testutil.Find[*container.AppTabs](dialog, nil)
+	if !ok {
+		t.Fatal("tabs not found")
+	}
+	if len(tabs.Items) != 2 || tabs.Items[0].Text != "Connect" || tabs.Items[1].Text != "Device info" {
+		t.Fatalf("unexpected tabs: %d items", len(tabs.Items))
+	}
+	if tabs.Selected() != tabs.Items[0] {
+		t.Errorf("selected tab = %q, want Connect by default", tabs.Selected().Text)
+	}
+}
+
+func TestNewConnectDialog_FitsSmallWindow(t *testing.T) {
+	d := newFakeDelegate(t)
+	d.win.Resize(fyne.NewSize(700, 450))
+
+	dialog := NewConnectDialog(d, &client.InventoryListItem{NodeID: "dev-1"})
+
+	if size := dialog.Size(); size.Width > 700 || size.Height > 450 {
+		t.Fatalf("dialog size %v exceeds the window", size)
+	}
 }

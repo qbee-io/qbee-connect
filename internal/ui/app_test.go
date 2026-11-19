@@ -42,7 +42,12 @@ func newTestApp(t *testing.T, mux *http.ServeMux) *App {
 	t.Cleanup(srv.Close)
 
 	a := test.NewTempApp(t)
-	store, err := service.NewConnectionStore(testutil.NewDirStorage(t))
+	storage := testutil.NewDirStorage(t)
+	store, err := service.NewConnectionStore(storage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prefs, err := service.NewPreferencesStore(storage)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,6 +58,7 @@ func newTestApp(t *testing.T, mux *http.ServeMux) *App {
 		cli:             client.New().WithBaseURL(srv.URL).WithAuthToken("token"),
 		ctx:             context.Background(),
 		store:           store,
+		prefs:           prefs,
 		deviceModel:     model.NewDeviceModel(),
 		pageInfoLabel:   widget.NewLabel(""),
 		accountSwitcher: container.NewHBox(),
@@ -457,5 +463,36 @@ func TestPersistLoginConfig(t *testing.T) {
 	}
 	if cfg.AuthToken != "token" || cfg.BaseURL != app.cli.GetBaseURL() {
 		t.Fatalf("unexpected persisted config: %+v", cfg)
+	}
+}
+
+func TestGetPreferences(t *testing.T) {
+	app := newTestApp(t, nil)
+
+	if app.GetPreferences() != app.prefs || app.GetPreferences() == nil {
+		t.Fatal("GetPreferences should return the app's preferences store")
+	}
+}
+
+func TestShowDialogs_WithPreferences(t *testing.T) {
+	app := newTestApp(t, nil)
+	if err := app.prefs.Save(service.Preferences{DefaultSSHUserName: "admin"}); err != nil {
+		t.Fatal(err)
+	}
+	app.store.SetActive("dev-1", &service.DeviceConnections{Targets: []client.RemoteAccessTarget{
+		{Protocol: "tcp", LocalHost: "127.0.0.1", LocalPort: "2222", RemoteHost: "127.0.0.1", RemotePort: "22"},
+	}})
+	item := &client.InventoryListItem{NodeID: "dev-1", Title: "gw"}
+
+	// App must satisfy the components' delegate interfaces, including GetPreferences.
+	app.ShowInfoDialog(item)
+	app.ShowConnectDialog(item)
+
+	overlays := app.mainWin.Canvas().Overlays().List()
+	if len(overlays) != 2 {
+		t.Fatalf("expected both dialogs as overlays, got %d", len(overlays))
+	}
+	if !strings.Contains(test.RenderToMarkup(app.mainWin.Canvas()), "ssh -p 2222 admin@127.0.0.1") {
+		t.Error("info dialog should render the ssh command with the default user")
 	}
 }

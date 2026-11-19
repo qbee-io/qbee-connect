@@ -23,6 +23,8 @@ type fakeDelegate struct {
 	app    fyne.App
 	win    fyne.Window
 	store  *service.ConnectionStore
+	prefs  *service.PreferencesStore
+	disk   *testutil.DirStorage
 	cli    *client.Client
 	ctx    context.Context
 	model  *model.DeviceModel
@@ -45,7 +47,12 @@ type fakeDelegate struct {
 func newFakeDelegate(t *testing.T) *fakeDelegate {
 	t.Helper()
 	a := test.NewTempApp(t)
-	store, err := service.NewConnectionStore(testutil.NewDirStorage(t))
+	storage := testutil.NewDirStorage(t)
+	store, err := service.NewConnectionStore(storage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prefs, err := service.NewPreferencesStore(storage)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,6 +63,8 @@ func newFakeDelegate(t *testing.T) *fakeDelegate {
 		app:    a,
 		win:    w,
 		store:  store,
+		prefs:  prefs,
+		disk:   storage,
 		cli:    client.New().WithBaseURL("http://127.0.0.1:1"),
 		ctx:    context.Background(),
 		model:  model.NewDeviceModel(),
@@ -75,6 +84,9 @@ func (f *fakeDelegate) withServer(t *testing.T, handler http.HandlerFunc) {
 func (f *fakeDelegate) GetClient() *client.Client          { return f.cli }
 func (f *fakeDelegate) GetContext() context.Context        { return f.ctx }
 func (f *fakeDelegate) GetStore() *service.ConnectionStore { return f.store }
+func (f *fakeDelegate) GetPreferences() *service.PreferencesStore {
+	return f.prefs
+}
 func (f *fakeDelegate) GetWindow() fyne.Window             { return f.win }
 func (f *fakeDelegate) GetFyneApp() fyne.App               { return f.app }
 func (f *fakeDelegate) GetDeviceModel() *model.DeviceModel { return f.model }

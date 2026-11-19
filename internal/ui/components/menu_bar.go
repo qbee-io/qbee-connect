@@ -13,7 +13,7 @@ import (
 )
 
 // MakeMenu constructs the main application menu
-func MakeMenu() *fyne.MainMenu {
+func MakeMenu(d preferencesDelegate) *fyne.MainMenu {
 
 	openAppearance := func() {
 		w := fyne.CurrentApp().NewWindow("Settings")
@@ -33,11 +33,12 @@ func MakeMenu() *fyne.MainMenu {
 	}
 	aboutItem := fyne.NewMenuItem("About", showAbout)
 	appearanceItem := fyne.NewMenuItem("Appearance", openAppearance)
-	mainMenu := fyne.NewMenu("File", aboutItem, appearanceItem)
+	preferencesItem := fyne.NewMenuItem("Preferences", func() { NewPreferencesDialog(d).Show() })
+	mainMenu := fyne.NewMenu("File", aboutItem, appearanceItem, preferencesItem)
 	return fyne.NewMainMenu(mainMenu)
 }
 
-const docsUrl = "https://docs.qbee.io/qbee-connect.html"
+const docsURL = "https://docs.qbee.io/qbee-connect.html"
 const supportEmail = "support@qbee.io"
 
 var aboutText = `**qbee-connect**
@@ -65,7 +66,7 @@ func newAbout() fyne.CanvasObject {
 		Version: fyne.CurrentApp().Metadata().Version,
 		Build:   fyne.CurrentApp().Metadata().Build,
 		Year:    time.Now().Year(),
-		DocURL:  docsUrl,
+		DocURL:  docsURL,
 		Email:   supportEmail,
 	}
 

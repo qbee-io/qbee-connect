@@ -1,7 +1,9 @@
 package components
 
 import (
+	"context"
 	"fmt"
+	"net"
 	"net/url"
 
 	"fyne.io/fyne/v2"
@@ -16,7 +18,10 @@ import (
 
 type infoDelegate interface {
 	GetFyneApp() fyne.App
+	GetClient() *client.Client
+	GetContext() context.Context
 	GetStore() *service.ConnectionStore
+	GetPreferences() *service.PreferencesStore
 	GetWindow() fyne.Window
 	DisplayError(title, msg string)
 	GetDeviceTitle(device *client.InventoryListItem) string
@@ -26,11 +31,13 @@ type infoDelegate interface {
 func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widget.PopUp {
 
 	targetInfo, ok := d.GetStore().GetActive(device.NodeID)
-	infoContainer := container.NewVBox(
-		widget.NewLabel("Target information: " + d.GetDeviceTitle(device)),
-	)
+	sshUser := d.GetPreferences().Get().DefaultSSHUserName
+	header := newDeviceDetails(d.GetDeviceTitle(device), device)
+	infoContainer := container.NewVBox()
 
-	if ok {
+	if !ok {
+		infoContainer.Add(widget.NewLabel("No active connections"))
+	} else {
 
 		infoContainer.Add(container.NewAdaptiveGrid(
 			3,
@@ -42,7 +49,7 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 		for _, t := range targetInfo.Targets {
 			targetString := fmt.Sprintf("**%s**: %s:%s => %s:%s\n", t.Protocol, t.LocalHost, t.LocalPort, t.RemoteHost, t.RemotePort)
 
-			mappedPort := renderMappedPort(t)
+			mappedPort := renderMappedPort(t, sshUser)
 			openAction := getOpenURLButton(d, t)
 
 			copyToClipboardBtn := widgets.NewButtonPointer("", func() {
@@ -73,26 +80,49 @@ func NewDeviceInfoDialog(d infoDelegate, device *client.InventoryListItem) *widg
 		widgets.NewButtonPointer("Close", func() { dialog.Hide() }),
 	)
 
+	connectionsTab := container.NewTabItemWithIcon("Connections", theme.LoginIcon(),
+		container.NewVScroll(infoContainer))
+	tabs := newDeviceTabs(d, device, connectionsTab)
+
 	dialogContent := container.NewBorder(
-		infoContainer,
+		header,
 		footer,
 		nil, nil,
-		widget.NewCard("", "", container.NewWithoutLayout()),
+		tabs,
 	)
 
 	dialog = widget.NewModalPopUp(dialogContent, d.GetWindow().Canvas())
-	dialog.Resize(fyne.NewSize(800, 500))
+	dialog.Resize(deviceDialogSize(d.GetWindow()))
 	return dialog
 }
 
-func renderMappedPort(t client.RemoteAccessTarget) string {
+// deviceDialogSize returns the size used for the device dialogs: large enough for the
+// device info tab, but never larger than the main window.
+func deviceDialogSize(w fyne.Window) fyne.Size {
+	const minWidth, minHeight = 800, 500
+	win := w.Canvas().Size()
+	width := min(max(minWidth, win.Width*0.9), win.Width)
+	height := min(max(minHeight, win.Height*0.9), win.Height)
+	return fyne.NewSize(width, height)
+}
+
+// renderSSHCommand returns the ssh command for a target, including the user name if set
+func renderSSHCommand(t client.RemoteAccessTarget, sshUser string) string {
+	host := t.LocalHost
+	if sshUser != "" {
+		host = sshUser + "@" + host
+	}
+	return "ssh -p " + t.LocalPort + " " + host
+}
+
+func renderMappedPort(t client.RemoteAccessTarget, sshUser string) string {
 	if t.Protocol == "udp" {
 		return t.LocalPort
 	}
 
 	switch t.RemotePort {
 	case "22":
-		return "ssh -p " + t.LocalPort + " " + t.LocalHost
+		return renderSSHCommand(t, sshUser)
 	case "3389":
 		return "mstsc /v:" + t.LocalHost + ":" + t.LocalPort
 	case "80", "443":
@@ -107,27 +137,52 @@ func renderMappedPort(t client.RemoteAccessTarget) string {
 	}
 }
 
-func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasObject {
-
+// isCustomTarget reports whether the target uses a TCP port that isn't one of the
+// predefined services, i.e. it was set up with the "custom" type.
+func isCustomTarget(t client.RemoteAccessTarget) bool {
 	if t.Protocol == "udp" {
+		return false
+	}
+	for _, port := range servicePortMap {
+		if port == t.RemotePort {
+			return false
+		}
+	}
+	return true
+}
+
+// browserURL returns the URL to open in a browser for the target. HTTP and HTTPS use their
+// own scheme; custom ports are assumed to serve plain HTTP. Other services (SSH, RDP, VNC)
+// and UDP targets can't be opened in a browser.
+func browserURL(t client.RemoteAccessTarget) (string, bool) {
+	switch {
+	case t.Protocol == "udp":
+		return "", false
+	case t.RemotePort == serviceHTTPPort || t.RemotePort == serviceHTTPSPort:
+		return renderMappedPort(t, ""), true
+	case isCustomTarget(t):
+		return "http://" + net.JoinHostPort(t.LocalHost, t.LocalPort), true
+	default:
+		return "", false
+	}
+}
+
+func getOpenURLButton(i infoDelegate, t client.RemoteAccessTarget) fyne.CanvasObject {
+	target, ok := browserURL(t)
+	if !ok {
 		return widget.NewLabel("")
 	}
 
-	switch t.RemotePort {
-	case "80", "443":
-		openURL := widgets.NewButtonPointer("", func() {
-			urlObj, err := url.Parse(renderMappedPort(t))
-			if err != nil {
-				i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())
-				return
-			}
-			if err := i.GetFyneApp().OpenURL(urlObj); err != nil {
-				i.DisplayError("Open URL failed", "Failed to open URL: "+err.Error())
-			}
-		})
-		openURL.SetIcon(theme.MailSendIcon())
-		return openURL
-	default:
-		return widget.NewLabel("")
-	}
+	openURL := widgets.NewButtonPointer("", func() {
+		urlObj, err := url.Parse(target)
+		if err != nil {
+			i.DisplayError("Invalid URL", "Failed to parse URL: "+err.Error())
+			return
+		}
+		if err := i.GetFyneApp().OpenURL(urlObj); err != nil {
+			i.DisplayError("Open URL failed", "Failed to open URL: "+err.Error())
+		}
+	})
+	openURL.SetIcon(theme.MailSendIcon())
+	return openURL
 }
